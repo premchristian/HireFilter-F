@@ -1,0 +1,12 @@
+﻿commit 73a099327744c84cb5df489b1bc128dc6d659340
+Author: Prem Christian <prem7christian@gmail.com>
+Date:   Tue Feb 24 10:31:51 2026 +0530
+
+    Update message
+
+M	src/components/Features.jsx
+M	src/components/Navbar.jsx
+M	src/components/chatbot/ChatbotAnalytics.jsx
+M	src/components/chatbot/ChatbotWidget.jsx
+M	src/components/messaging/StandaloneChat.jsx
+A	src/components/messaging/StandaloneChat.jsx.bak

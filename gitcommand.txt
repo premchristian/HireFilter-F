@@ -1,0 +1,55 @@
+git init
+
+git add .
+
+git commit -m "Initial commit"
+
+
+Connect to your GitHub repository
+Option A: New repository
+Go to GitHub
+ → click New repository → give it a name → leave it empty (no README for simplicity).
+https://github.com/username/project-name.git
+
+
+Add this remote to your project:
+git remote add origin https://github.com/username/project-name.git
+
+
+git branch -M main
+git push -u origin main
+
+
+
+git add .
+git commit -m "Describe your changes"
+git push
+
+---------------------------------------------------------------------------------------
+1️⃣ Stage your changes
+git add .
+
+
+. adds all changed/new files. You can also add a specific file like:
+
+git add filename.js
+
+2️⃣ Commit your changes
+git commit -m "Describe what you changed"
+
+
+Example:
+
+git commit -m "Added login page functionality"
+
+3️⃣ Push changes to GitHub
+git push
+
+
+This will upload your latest commit to the GitHub repository.
+
+✅ Summary for every update:
+
+git add .
+git commit -m "Your update message"
+git push

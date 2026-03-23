@@ -1,0 +1,27 @@
+﻿b5a2a4d HEAD@{0}: checkout: moving from 73a099327744c84cb5df489b1bc128dc6d659340 to main
+73a0993 HEAD@{1}: commit: Update message
+309a2e0 HEAD@{2}: commit: Update Jobs and Message page
+d9ac7ff HEAD@{3}: checkout: moving from main to d9ac7ff
+b5a2a4d HEAD@{4}: commit: Add Chart in HR Dashboard
+22e699e HEAD@{5}: commit: Update Dashboard
+d9ac7ff HEAD@{6}: commit: Update Theme FIle and Message
+2b57fec HEAD@{7}: commit: update message file
+ec40bb8 HEAD@{8}: commit: update message file
+ac19656 HEAD@{9}: commit: Update page
+d260f41 HEAD@{10}: commit: Update Forgot page
+63201f0 HEAD@{11}: commit: Update Log in and Register files
+4e5824c HEAD@{12}: commit: update project files
+f3f7a09 HEAD@{13}: commit: update code
+ee6fe7a HEAD@{14}: commit: Fetch API in application
+445a908 HEAD@{15}: commit: Fetch API in application
+c268040 HEAD@{16}: commit: Fetch API in admin panel
+344ca83 HEAD@{17}: commit: Update Dashboard
+0fb12cd HEAD@{18}: commit: Update profile page
+f80ef2c HEAD@{19}: commit: Update application
+06bcab5 HEAD@{20}: commit: Updated delete account
+150ab51 HEAD@{21}: commit: Updated Post Jobs
+d791cf5 HEAD@{22}: commit: Updated project files
+66fb17a HEAD@{23}: commit: Update in names
+e5c8d92 HEAD@{24}: reset: moving to HEAD
+e5c8d92 HEAD@{25}: Branch: renamed refs/heads/master to refs/heads/main
+e5c8d92 HEAD@{27}: commit (initial): Updated code

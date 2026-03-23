@@ -1,0 +1,15 @@
+﻿diff --git a/src/context/MessagingContext.js b/src/context/MessagingContext.js
+index c0217fa..4d325bc 100644
+--- a/src/context/MessagingContext.js
++++ b/src/context/MessagingContext.js
+@@ -173,8 +173,8 @@ export function MessagingProvider({ children, currentUser }) {
+     currentUser
+   });
+ 
+-  // Base API URL - pointing to local API
+-  const API_BASE_URL = '/api';
++  // Base API URL - pointing to deployed API backend for Netlify
++  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://hire-filter-backend.onrender.com/api';
+ 
+   // Load conversations
+   const loadConversations = useCallback(async () => {

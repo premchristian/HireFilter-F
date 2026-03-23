@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --color-primary: #7C5CFC;
+  --color-primary-light: #9D85FF;
+  --color-primary-dark: #5B3FD7;
+  --color-light-purple: #EBE8FF;
+  --color-background: #F4F7FE;
+  --color-text: #080808;
+  --color-muted: #71717A;
+  --color-success: #27C052;
+  
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+  --radius-4xl: 32px;
+  
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-soft: 0 10px 30px -5px rgba(124, 92, 252, 0.08);
+
+  --font-inter: "Inter", sans-serif;
+}
+
+:root {
+  --background: #F4F7FE;
+  --foreground: #080808;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter);
+  overflow-x: hidden;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.section-bg-gradient {
+  background: radial-gradient(circle at 10% 20%, rgba(124, 92, 252, 0.03) 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, rgba(124, 92, 252, 0.05) 0%, transparent 50%);
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at 80% 20%, rgba(124, 92, 252, 0.1) 0%, transparent 40%),
+              radial-gradient(circle at 20% 80%, rgba(124, 92, 252, 0.05) 0%, transparent 40%);
+}
+
+.liquid-container {
+  filter: url('#goo');
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.liquid-blob {
+  position: absolute;
+  background: var(--color-primary);
+  border-radius: 50%;
+  filter: blur(30px);
+  opacity: 0.3;
+}
+
+.noise {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  content: "";
+  opacity: 0.02;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.card-hover {
+  @apply transition-all duration-500 hover:-translate-y-2 hover:shadow-soft;
+}
+
+.btn-primary {
+  @apply bg-primary text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 text-center cursor-pointer;
+}
+
+.btn-secondary {
+  @apply bg-white text-primary font-bold py-3 px-8 rounded-xl border border-primary/10 shadow-sm transition-all duration-300 hover:bg-primary/5 active:scale-95 text-center cursor-pointer;
+}
+
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary-light;
+}
+
+/* Custom Scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  width: 8px;
+}
+
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: rgba(124, 92, 252, 0.3);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(124, 92, 252, 0.5);
+}
