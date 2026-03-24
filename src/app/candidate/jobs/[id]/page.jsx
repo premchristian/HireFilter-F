@@ -8,21 +8,24 @@ import { useEffect, useState } from "react";
 import { useJobContext } from "@/context/JobContext";
 
 export default function JobDetailsPage() {
-    const params = useParams();
-    const { getJobById } = useJobContext();
+    const { id } = useParams();
+    const { getJobById, toggleSaveJob } = useJobContext();
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
 
+
+
     useEffect(() => {
         const fetchJob = async () => {
-            if (params.id) {
-                const data = await getJobById(params.id);
+            if (id) {
+                console.log("[JobDetails] Fetching job details for:", id);
+                const data = await getJobById(id);
                 setJob(data);
                 setLoading(false);
             }
         };
         fetchJob();
-    }, [params.id]);
+    }, [id]);
 
     if (loading) {
         return <div className="text-text-primary p-6 max-w-4xl mx-auto">Loading job details...</div>;
@@ -53,9 +56,6 @@ export default function JobDetailsPage() {
                 <div className="absolute top-8 right-8 flex gap-4">
                     <button className="p-3 rounded-2xl bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white transition-all shadow-sm">
                         <Share2 className="w-5 h-5" />
-                    </button>
-                    <button className="p-3 rounded-2xl bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white transition-all shadow-sm">
-                        <Bookmark className="w-5 h-5" />
                     </button>
                 </div>
 
@@ -159,14 +159,12 @@ export default function JobDetailsPage() {
                             Deadline: {job.lastDate}
                         </div>
 
-                        <Link href={`/candidate/apply/${params.id}`}>
+                        <Link href={`/candidate/apply/${id}`}>
                             <button className="w-full py-5 bg-[#7C5CFC] hover:bg-[#6b4ce6] text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-[#7C5CFC]/20 mb-4 active:scale-95">
                                 Apply Now
                             </button>
                         </Link>
-                        <button className="w-full py-4 text-[#71717A] hover:text-[#080808] font-bold border-2 border-[#F1F1F1] rounded-2xl transition-all hover:bg-[#F4F7FE]">
-                            Save for Later
-                        </button>
+
                     </div>
                 </div>
             </div>

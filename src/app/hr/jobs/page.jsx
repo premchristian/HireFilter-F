@@ -13,7 +13,8 @@ import {
     Briefcase,
     ChevronDown,
     Trash2,
-    X
+    X,
+    Edit2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -90,6 +91,70 @@ export default function JobsPage() {
         fetchCounts();
     }, [jobs]);
     
+    // Edit state
+    const [jobToEdit, setJobToEdit] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
+
+    const handleEditClick = (job) => {
+        setJobToEdit(job);
+        setEditFormData({
+            jobTitle: job.title || "",
+            location: job.location || "",
+            jobType: job.type || "Full-Time"
+        });
+        setOpenMenuId(null);
+    };
+
+    const handleUpdateJob = async () => {
+        if (!jobToEdit) return;
+
+        const token = localStorage.getItem("token");
+        if (!token) return alert("Please log in again.");
+
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+            // Fetch raw job details from DB
+            const rawJobRes = await axios.get(`${baseUrl}/api/jobs/${jobToEdit.id}`);
+            const rawJob = rawJobRes.data?.data || rawJobRes.data?.job || rawJobRes.data;
+
+            if (!rawJob) {
+                return alert("Could not fetch the full job details. Try again.");
+            }
+
+            // Construct payload with ONLY allowed Joi schema fields!
+            // Do NOT include _id, __v, department, status, createdAt, updatedAt, viewsCount, etc.
+            const payload = {
+                jobTitle: editFormData.jobTitle || rawJob.jobTitle,
+                jobDescription: rawJob.jobDescription || "Not provided",
+                jobType: editFormData.jobType || rawJob.jobType,
+                location: editFormData.location || rawJob.location,
+                requiredSkills: Array.isArray(rawJob.requiredSkills) ? rawJob.requiredSkills : [],
+                experience: rawJob.experience || { min: 0, max: 0 },
+                salary: rawJob.salary || { min: 0, max: 0, currency: "USD" },
+                education: rawJob.education || "Any",
+                lastDate: rawJob.lastDate || new Date().toISOString()
+            };
+
+            await axios.put(`${baseUrl}/api/jobs/${jobToEdit.id}`, payload, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            
+            fetchJobs();
+            setJobToEdit(null);
+            alert("Job updated successfully");
+        } catch (error) {
+            console.error("Error updating job:", error);
+            const errMsg = error.response?.data?.errors 
+                ? error.response.data.errors.join(", ") 
+                : error.response?.data?.message || "Failed to update job";
+            alert("Validation Error: " + errMsg);
+        }
+    };
+
     // Delete state
     const [openMenuId, setOpenMenuId] = useState(null);
     const [jobToDelete, setJobToDelete] = useState(null);
@@ -324,6 +389,13 @@ export default function JobsPage() {
                                                             className="absolute right-0 mt-2 w-48 bg-[#FFFFFF] border border-[#F1F1F1] rounded-[16px] shadow-[0px_8px_30px_rgba(0,0,0,0.1)] z-50 overflow-hidden"
                                                         >
                                                         <button 
+                                                            onClick={() => handleEditClick(job)}
+                                                            className="w-full text-left px-4 py-3 text-sm text-[#7C5CFC] hover:bg-[#F4F7FE] flex items-center gap-2 transition-colors border-b border-[#F1F1F1]"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                            Edit Job
+                                                        </button>
+                                                        <button 
                                                             onClick={() => {
                                                                 setJobToDelete(job);
                                                                 setOpenMenuId(null);
@@ -368,6 +440,72 @@ export default function JobsPage() {
                     </button>
                 </motion.div>
             )}
+
+            {/* Edit Job Modal */}
+            <AnimatePresence>
+                {jobToEdit && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-[#FFFFFF] border border-[#F1F1F1] rounded-[16px] p-8 max-w-lg w-full shadow-[0px_8px_30px_rgba(0,0,0,0.1)] relative"
+                        >
+                            <button onClick={() => setJobToEdit(null)} className="absolute top-4 right-4 text-[#71717A] hover:text-[#080808]">
+                                <X className="w-5 h-5" />
+                            </button>
+                            <h2 className="text-2xl font-bold text-[#080808] mb-6 flex items-center gap-2">
+                                <Edit2 className="w-6 h-6 text-[#7C5CFC]" />
+                                Edit Job Post
+                            </h2>
+                            <div className="space-y-4 mb-6">
+                                <div>
+                                    <label className="text-sm font-medium text-[#080808]">Job Title</label>
+                                    <input 
+                                        type="text" 
+                                        value={editFormData.jobTitle} 
+                                        onChange={(e) => setEditFormData({...editFormData, jobTitle: e.target.value})}
+                                        className="w-full mt-1 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[12px] px-4 py-2.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <label className="text-sm font-medium text-[#080808]">Type</label>
+                                        <select 
+                                            value={editFormData.jobType} 
+                                            onChange={(e) => setEditFormData({...editFormData, jobType: e.target.value})}
+                                            className="w-full mt-1 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[12px] px-4 py-2.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50"
+                                        >
+                                            <option>Full-Time</option>
+                                            <option>Part-Time</option>
+                                            <option>Contract</option>
+                                            <option>Internship</option>
+                                            <option>Remote</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-[#080808]">Location</label>
+                                    <input 
+                                        type="text" 
+                                        value={editFormData.location} 
+                                        onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
+                                        className="w-full mt-1 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[12px] px-4 py-2.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setJobToEdit(null)} className="flex-1 px-4 py-3 rounded-[12px] border border-[#F1F1F1] text-[#71717A] hover:bg-[#F4F7FE] font-medium transition-all">
+                                    Cancel
+                                </button>
+                                <button onClick={handleUpdateJob} className="flex-1 px-4 py-3 rounded-[12px] bg-[#7C5CFC] hover:bg-[#6A4FE0] text-white font-bold transition-all shadow-md">
+                                    Save Changes
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Delete Confirmation Modal */}
              <AnimatePresence>

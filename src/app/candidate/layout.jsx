@@ -22,7 +22,8 @@ import {
     MessageSquare,
     Info,
     CheckCircle2,
-    FileText
+    FileText,
+    Bookmark
 } from "lucide-react";
 import { logout, getUserDetails } from "@/utils/auth";
 
@@ -30,6 +31,7 @@ const navItems = [
     { name: "Overview", href: "/candidate/dashboard", icon: LayoutDashboard },
     { name: "Messages", href: "/candidate/messages", icon: MessageSquare },
     { name: "Find Jobs", href: "/candidate/jobs", icon: Search },
+    { name: "Saved Jobs", href: "/candidate/saved-jobs", icon: Bookmark },
     { name: "My Applications", href: "/candidate/applications", icon: Briefcase },
     { name: "My Resume", href: "/candidate/resume", icon: FileText },
     // { name: "Interviews", href: "/candidate/interviews", icon: Calendar },

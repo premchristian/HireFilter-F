@@ -21,7 +21,13 @@ async function testApis() {
         const response2 = await axios.get("https://hire-filter-backend.onrender.com/api/jobs/698c20bb4e9e254128fbabf4");
         console.log("Status:", response2.status);
         console.log("Keys:", Object.keys(response2.data));
-        console.log("Job Title:", response2.data.job?.jobTitle || response2.data.data?.jobTitle);
+        const jobData = response2.data.data || response2.data.job;
+        if(jobData) {
+            console.log("\n--- JOB DATA OBJECT ---");
+            console.log(JSON.stringify(jobData, null, 2));
+            console.log("\n--- JOB FIELDS ---");
+            console.log(Object.keys(jobData));
+        }
 
     } catch (error) {
         console.error("Error:", error.message);

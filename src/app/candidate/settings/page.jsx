@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Lock, User, Globe, ChevronRight, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { useState } from "react";
 import { useNotificationContext } from "@/context/NotificationContext";

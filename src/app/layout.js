@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "HireFilter",
   description: "Advanced AI Resume Screening and Hiring Platform",
+};
+
+export const viewport = {
   colorScheme: "light",
 };
 

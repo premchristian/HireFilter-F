@@ -146,7 +146,12 @@ export default function ApplicantsListPage() {
                         </thead>
                         <tbody className="divide-y divide-[#F1F1F1]">
                             {applicants.length > 0 ? (
-                                applicants.map((app, index) => {
+                                [...applicants].sort((a, b) => {
+                                    const scoreA = calculateScore(a.user?.profile?.skills || a.skills || [], job?.skills || []);
+                                    const scoreB = calculateScore(b.user?.profile?.skills || b.skills || [], job?.skills || []);
+                                    // Ascending order as requested (lowest score first, highest score last)
+                                    return scoreA - scoreB;
+                                }).map((app, index) => {
                                     const getImgUrl = (img) => {
                                         if (!img) return null;
                                         if (typeof img === "string") return img;
