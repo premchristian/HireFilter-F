@@ -34,7 +34,7 @@ export default function AnalyticsPage() {
                  {[
                     { label: "Time to Hire", value: "18 Days", change: "-12%", icon: Clock, trend: "down", color: "text-[#27C052]", bg: "bg-[#EFFFED]" },
                     { label: "Offer Acceptance", value: "85%", change: "+5%", icon: Users, trend: "up", color: "text-[#27C052]", bg: "bg-[#EFFFED]" },
-                    { label: "Cost per Hire", value: "$1,250", change: "-2%", icon: TrendingUp, trend: "down", color: "text-[#27C052]", bg: "bg-[#EFFFED]" },
+                    { label: "Cost per Hire", value: "₹12,500", change: "-2%", icon: TrendingUp, trend: "down", color: "text-success", bg: "bg-background" },
                     { label: "Pipeline Velocity", value: "4.2", change: "+0.8", icon: BarChart3, trend: "up", color: "text-[#27C052]", bg: "bg-[#EFFFED]" },
                 ].map((stat, i) => (
                     <motion.div key={i} variants={item} className="p-6 bg-[#FFFFFF] border border-[#F1F1F1] shadow-[0px_4px_20px_rgba(0,0,0,0.05)] rounded-[16px] transition-all hover:-translate-y-1 hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)]">

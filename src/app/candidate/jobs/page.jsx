@@ -382,7 +382,7 @@ export default function CandidateJobsPage() {
                                         </span>
                                         <span className="flex items-center gap-2 bg-[#EFFFED] px-3 py-1.5 rounded-[10px] text-[#27C052]">
                                             <IndianRupee className="w-3.5 h-3.5" />
-                                            {job.salary ? job.salary.replace(/\$/g, '') : 'Best in Industry'}
+                                            {job.salary ? job.salary.replace(/[₹$]/g, '') : 'Best in Industry'}
                                         </span>
                                     </div>
                                     <span className="p-2.5 rounded-[12px] bg-[#F4F7FE] text-[#71717A] group-hover:bg-[#7C5CFC] group-hover:text-white transition-all border border-[#F1F1F1] group-hover:border-[#7C5CFC] shadow-sm">

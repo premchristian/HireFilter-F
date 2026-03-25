@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, IndianRupee, Clock, Briefcase, CheckCircle, Share2, Bookmark } from "lucide-react";
+import { ArrowLeft, MapPin, IndianRupee, Clock, Briefcase, CheckCircle, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,7 +9,7 @@ import { useJobContext } from "@/context/JobContext";
 
 export default function JobDetailsPage() {
     const { id } = useParams();
-    const { getJobById, toggleSaveJob } = useJobContext();
+    const { getJobById, toggleSaveJob, savedJobIds } = useJobContext();
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -20,25 +20,57 @@ export default function JobDetailsPage() {
             if (id) {
                 console.log("[JobDetails] Fetching job details for:", id);
                 const data = await getJobById(id);
-                setJob(data);
+                if (data) {
+                    setJob(data);
+                }
                 setLoading(false);
             }
         };
         fetchJob();
     }, [id]);
 
+    // Sync isSaved status separately to avoid re-fetching the whole job
+    useEffect(() => {
+        if (job) {
+            const isSavedNow = savedJobIds.includes(id);
+            if (job.isSaved !== isSavedNow) {
+                console.log(`[JobDetails] Syncing saved status for ${id}:`, isSavedNow);
+                setJob(prev => ({ ...prev, isSaved: isSavedNow }));
+            }
+        }
+    }, [savedJobIds, id, job?.id]);
+
+    const handleToggleSave = async () => {
+        try {
+            // Optimistically update local state for immediate feedback
+            const newIsSaved = !job.isSaved;
+            setJob(prev => ({
+                ...prev,
+                isSaved: newIsSaved,
+                saveCount: newIsSaved ? prev.saveCount + 1 : Math.max(0, prev.saveCount - 1)
+            }));
+
+            await toggleSaveJob(id);
+        } catch (error) {
+            console.error("Failed to toggle save:", error);
+            // Revert on error
+            const data = await getJobById(id);
+            if (data) setJob(data);
+        }
+    };
+
     if (loading) {
-        return <div className="text-text-primary p-6 max-w-4xl mx-auto">Loading job details...</div>;
+        return <div className="text-muted p-6 max-w-4xl mx-auto">Loading job details...</div>;
     }
 
     if (!job) {
-        return <div className="text-text-primary p-6 max-w-4xl mx-auto">Job not found.</div>;
+        return <div className="text-muted p-6 max-w-4xl mx-auto">Job not found.</div>;
     }
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-12">
             <Link href="/candidate/jobs">
-                <button className="flex items-center gap-3 text-[#71717A] hover:text-[#080808] transition-all mb-6 group font-bold">
+                <button className="flex items-center gap-3 text-muted hover:text-text transition-all mb-6 group font-bold">
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     Back to Jobs
                 </button>
@@ -48,29 +80,42 @@ export default function JobDetailsPage() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white border border-[#F1F1F1] rounded-[32px] p-10 relative overflow-hidden shadow-[0px_4px_24px_rgba(0,0,0,0.03)]"
+                className="bg-white border border-[#F1F1F1] rounded-4xl p-10 relative overflow-hidden shadow-soft"
             >
                 {/* Background Decoration */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#7C5CFC]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
                 
                 <div className="absolute top-8 right-8 flex gap-4">
-                    <button className="p-3 rounded-2xl bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white transition-all shadow-sm">
-                        <Share2 className="w-5 h-5" />
+                    <button 
+                        onClick={handleToggleSave}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all shadow-md font-bold ${
+                            job.isSaved 
+                            ? "bg-primary border-primary text-white shadow-primary/30 scale-105" 
+                            : "bg-background border-[#F1F1F1] text-muted hover:text-primary hover:bg-white"
+                        }`}
+                    >
+                        <Bookmark className={`w-5 h-5 ${job.isSaved ? "fill-white" : ""}`} />
+                        {job.isSaved ? "Saved" : "Save Job"}
                     </button>
                 </div>
 
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-10">
-                    <div className="w-24 h-24 rounded-[28px] bg-[#7C5CFC] flex items-center justify-center text-4xl font-bold text-white shadow-xl shadow-[#7C5CFC]/20 shrink-0">
+                    <div className="w-24 h-24 rounded-3xl bg-primary flex items-center justify-center text-4xl font-bold text-white shadow-xl shadow-primary/20 shrink-0">
                         {job.title.charAt(0)}
                     </div>
                     <div className="text-center md:text-left">
-                        <h1 className="text-4xl font-black text-[#080808] mb-3 tracking-tight">{job.title}</h1>
-                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[#71717A] font-bold">
-                            <span className="text-[#7C5CFC]">{job.department}</span>
+                        <h1 className="text-4xl font-black text-text mb-3 tracking-tight">{job.title}</h1>
+                        <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-muted font-bold">
+                            <span className="text-primary">{job.department}</span>
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F1F1F1]" />
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4" />
                                 <span>{job.location}</span>
+                            </div>
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#F1F1F1]" />
+                            <div className={`flex items-center gap-2 transition-colors ${job.isSaved ? "text-primary" : ""}`}>
+                                <Bookmark className={`w-4 h-4 ${job.isSaved ? "fill-current" : ""}`} />
+                                <span>{job.saveCount} candidate{job.saveCount !== 1 ? 's' : ''} saved this job</span>
                             </div>
                         </div>
 

@@ -37,8 +37,8 @@ const BOT_RESPONSES = {
   ],
 
   pricing: [
-    "We offer flexible pricing:\n\n🆓 **Free for Candidates** - Full access to job search\n💼 **Basic Plan** - $99/month for small teams\n🚀 **Pro Plan** - $299/month for growing companies\n🏢 **Enterprise** - Custom pricing for large organizations\n\nWould you like details about any specific plan?",
-    "Our pricing is designed to scale with your needs. Candidates always use HireFilter for free! For employers, we have plans starting at $99/month."
+    "We offer flexible pricing:\n\n🆓 **Free for Candidates** - Full access to job search\n💼 **Basic Plan** - ₹9,999/month for small teams\n🚀 **Pro Plan** - ₹24,999/month for growing companies\n🏢 **Enterprise** - Custom pricing for large organizations\n\nWould you like details about any specific plan?",
+    "Our pricing is designed to scale with your needs. Candidates always use HireFilter for free! For employers, we have plans starting at ₹9,999/month."
   ],
 
   support: [

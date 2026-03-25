@@ -346,7 +346,7 @@ export default function CreateJobPage() {
                                     </div>
                                     <div>
                                         <span className="text-[#71717A] block">Salary Range</span>
-                                        <span className="text-[#080808] font-medium">${formData.salaryMin} - ${formData.salaryMax}</span>
+                                        <span className="text-[#080808] font-medium">₹{formData.salaryMin} - ₹{formData.salaryMax}</span>
                                     </div>
                                     <div>
                                         <span className="text-[#71717A] block">Education Level</span>
