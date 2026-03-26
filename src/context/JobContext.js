@@ -25,37 +25,50 @@ export function JobProvider({ children }) {
                 console.warn("[JobContext] No token found in localStorage");
             }
 
-            const response = await axios.get(`${baseUrl}/api/jobs`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            // 1. Fetch EVERYTHING (All jobs and User's saved jobs)
+            const [response, savedResponse] = await Promise.all([
+                axios.get(`${baseUrl}/api/jobs`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${baseUrl}/api/jobs/saved`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
+            ]);
 
             const jobsData = response.data.data;
             const jobsArray = Array.isArray(jobsData) ? jobsData : (jobsData?.jobs || []);
 
-            console.log("[JobContext] Jobs API Response Status:", response.status);
+            // 2. Build a Set of saved Job IDs for instant lookup
+            const savedRaw = savedResponse?.data?.data?.savedJobs || savedResponse?.data?.savedJobs || (Array.isArray(savedResponse?.data?.data) ? savedResponse.data.data : []);
+            const savedIds = new Set();
+            if (Array.isArray(savedRaw)) {
+                savedRaw.forEach(item => {
+                    const id = item._id || item.id || (item.job?._id || item.job?.id);
+                    if (id) savedIds.add(id.toString());
+                });
+            }
 
             if (Array.isArray(jobsArray)) {
                 const mappedJobs = jobsArray.map(job => ({
                     id: job._id,
                     title: job.jobTitle,
-                    department: job.department || "Engineering", // Fallback if missing
+                    department: job.department || "Engineering",
                     type: job.jobType,
                     location: job.location,
                     applicants: job.applicants ? job.applicants.length : 0,
                     status: job.status || "Active",
-                    posted: new Date(job.createdAt).toLocaleDateString(), // Simple date for now
+                    posted: new Date(job.createdAt).toLocaleDateString(),
                     createdAt: job.createdAt,
                     salary: job.salary ? `₹${job.salary.min} - ₹${job.salary.max}` : "Not specified",
                     description: job.jobDescription,
                     experience: job.experience ? `${job.experience.min}-${job.experience.max} years` : "Not specified",
                     skills: job.requiredSkills || [],
+<<<<<<< HEAD
                     createdBy: job.createdBy || job.user || null, // Map creator ID
                     saveCount: job.savedBy?.length || 0 // Count candidates who saved the job
+=======
+                    createdBy: job.createdBy || job.user || null,
+                    savedCount: job.savedCount || (job.savedBy ? job.savedBy.length : 0),
+                    isSaved: savedIds.has(job._id?.toString()) || job.isSaved || false
+>>>>>>> daily-updates
                 }));
                 setJobs(mappedJobs);
-                console.log(`[JobContext] Successfully mapped ${mappedJobs.length} jobs`);
                 setLoading(false);
             } else {
                 console.error("[JobContext] Unexpected response format. Could not find jobs array:", {
@@ -83,14 +96,19 @@ export function JobProvider({ children }) {
         try {
             const token = localStorage.getItem("token");
             const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-            const response = await axios.get(`${baseUrl}/api/jobs/${id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            // 1. Fetch Job and Saved list (for sync)
+            const [response, savedResponse] = await Promise.all([
+                axios.get(`${baseUrl}/api/jobs/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${baseUrl}/api/jobs/saved`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
+            ]);
 
             if (response.data) {
                 const jobData = response.data.data || response.data.job || response.data;
+                const savedRaw = savedResponse?.data?.data?.savedJobs || savedResponse?.data?.savedJobs || (Array.isArray(savedResponse?.data?.data) ? savedResponse.data.data : []);
+                const isActuallySaved = Array.isArray(savedRaw) && savedRaw.some(item => {
+                    const sId = item._id || item.id || (item.job?._id || item.job?.id);
+                    return sId?.toString() === id.toString();
+                });
                 
                 // Final check to ensure we have an object that looks like a job
                 if (jobData && (jobData._id || jobData.id || jobData.jobTitle)) {
@@ -111,8 +129,13 @@ export function JobProvider({ children }) {
                         skills: job.requiredSkills || job.skills || [],
                         education: job.education || "Not specified",
                         lastDate: job.lastDate ? new Date(job.lastDate).toLocaleDateString() : "Open",
+<<<<<<< HEAD
                         isSaved: savedJobIds.includes(job._id || job.id) || job.isSaved || false,
                         saveCount: job.saveCount || job.savedCount || job.savedBy?.length || 0
+=======
+                        isSaved: isActuallySaved || job.isSaved || false,
+                        savedCount: job.savedCount || (job.savedBy ? job.savedBy.length : 0)
+>>>>>>> daily-updates
                     };
                 }
             }

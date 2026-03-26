@@ -14,7 +14,7 @@
 //     const [searchQuery, setSearchQuery] = useState("");
 //     const [locationQuery, setLocationQuery] = useState("");
 
-//     const { jobs: contextJobs, loading } = useJobContext();
+//     const { jobs: contextJobs, loading, toggleSaveJob, fetchJobs } = useJobContext();
 
 //     const jobs = contextJobs.map((job, index) => {
 //         const colors = [
@@ -214,7 +214,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, IndianRupee, Clock, Briefcase, Filter, ArrowRight, RotateCcw } from "lucide-react";
+import { Search, MapPin, IndianRupee, Clock, Briefcase, Filter, ArrowRight, RotateCcw, Bookmark } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -227,7 +227,7 @@ export default function CandidateJobsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [locationQuery, setLocationQuery] = useState("");
 
-    const { jobs: contextJobs, loading } = useJobContext();
+    const { jobs: contextJobs, loading, toggleSaveJob, fetchJobs } = useJobContext();
 
     const jobs = contextJobs.map((job, index) => {
         const colors = [
@@ -351,8 +351,32 @@ export default function CandidateJobsPage() {
                                     <div className={`w-14 h-14 rounded-[16px] ${job.logoStyle} flex items-center justify-center text-2xl font-bold shrink-0 shadow-sm border border-transparent group-hover:border-[#7C5CFC]/20 transition-all`}>
                                         {job.logo}
                                     </div>
-                                    <div className="px-3 py-1.5 rounded-full text-[10px] font-bold bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] uppercase tracking-wider">
-                                        {job.posted || "New"}
+                                    <div className="flex gap-3 items-center relative z-20">
+                                        <button 
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                try {
+                                                    // Optimistically update the context-derived job (this is tricky in the current structure)
+                                                    // Instead, we will rely on the backend toggle and only refresh if actually needed
+                                                    // But for now, let's just make the call and trust the backend or add a local toggle if we had local state
+                                                    await toggleSaveJob(job.id);
+                                                    // fetchJobs(); // Removed to prevent 'flip-back'
+                                                } catch (err) {
+                                                    console.error("Error toggling save:", err);
+                                                }
+                                            }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all ${
+                                                job.isSaved 
+                                                    ? "bg-[#7C5CFC] border-[#7C5CFC] text-white shadow-lg shadow-[#7C5CFC]/20" 
+                                                    : "bg-[#F4F7FE] border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white"
+                                            }`}
+                                        >
+                                            <Bookmark className={`w-3.5 h-3.5 ${job.isSaved ? "fill-white" : ""}`} />
+                                            {job.savedCount > 0 && <span className="text-[10px] font-bold">{job.savedCount}</span>}
+                                        </button>
+                                        <div className="px-3 py-1.5 rounded-full text-[10px] font-bold bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] uppercase tracking-wider">
+                                            {job.posted || "New"}
+                                        </div>
                                     </div>
                                 </div>
 
