@@ -47,6 +47,7 @@ export function JobProvider({ children }) {
                 const mappedJobs = jobsArray.map(job => ({
                     id: job._id,
                     title: job.jobTitle,
+                    company: job.createdBy?.company?.name || job.department || "Engineering",
                     department: job.department || "Engineering",
                     type: job.jobType,
                     location: job.location,
@@ -110,6 +111,7 @@ export function JobProvider({ children }) {
                     return {
                         id: job._id || job.id,
                         title: job.jobTitle || job.title,
+                        company: job.createdBy?.company?.name || job.department || "Engineering",
                         department: job.department || "Engineering",
                         type: job.jobType || job.type,
                         location: job.location,

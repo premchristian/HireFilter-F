@@ -250,6 +250,7 @@ export default function ProfilePage() {
 
             const payload = {
                 name: profile.name,
+                email: profile.email,
                 phone: profile.phone,
                 currentAddress: profile.currentAddress,
                 profile: {
@@ -265,6 +266,7 @@ export default function ProfilePage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
+            localStorage.setItem("userEmail", profile.email);
             setIsEditing(false);
         } catch (error) {
             console.error("Error updating profile:", error);
@@ -352,6 +354,10 @@ export default function ProfilePage() {
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0 }
     };
+
+    const loginIdentifier = typeof window !== 'undefined' ? (localStorage.getItem("userEmail") || "") : "";
+    const isEmailLocked = profile.email && loginIdentifier && profile.email.toLowerCase() === loginIdentifier.toLowerCase();
+    const isPhoneLocked = profile.phone && loginIdentifier && (profile.phone === loginIdentifier || profile.phone.includes(loginIdentifier) || loginIdentifier.includes(profile.phone));
 
     return (
         <motion.div
@@ -559,9 +565,10 @@ export default function ProfilePage() {
                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A]" />
                                     <input
                                         type="email"
-                                        readOnly={true}
+                                        readOnly={isEmailLocked || !isEditing}
                                         value={profile.email}
-                                        className="w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] pl-12 pr-4 py-3.5 text-[#080808] font-medium opacity-60 cursor-not-allowed outline-none"
+                                        onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                                        className={`w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] pl-12 pr-4 py-3.5 text-[#080808] font-medium transition-all outline-none ${(!isEditing || isEmailLocked) ? 'opacity-60 cursor-not-allowed' : 'focus:ring-2 focus:ring-[#7C5CFC]/20'}`}
                                     />
                                 </div>
                             </div>
@@ -572,14 +579,14 @@ export default function ProfilePage() {
                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A]" />
                                     <input
                                         type="tel"
-                                        readOnly={!isEditing}
+                                        readOnly={isPhoneLocked || !isEditing}
                                         value={profile.phone}
                                         onChange={(e) => {
                                             let val = e.target.value;
                                             if (val && !val.startsWith('+')) val = '+' + val;
                                             setProfile({ ...profile, phone: val });
                                         }}
-                                        className={`w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] pl-12 pr-4 py-3.5 text-[#080808] font-medium outline-none focus:ring-2 focus:ring-[#7C5CFC]/20 ${!isEditing ? 'cursor-default' : ''}`}
+                                        className={`w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] pl-12 pr-4 py-3.5 text-[#080808] font-medium outline-none focus:ring-2 focus:ring-[#7C5CFC]/20 ${(!isEditing || isPhoneLocked) ? 'opacity-60 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                             </div>

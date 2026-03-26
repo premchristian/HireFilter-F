@@ -95,7 +95,7 @@ export default function JobDetailsPage() {
                     <div className="text-center md:text-left">
                         <h1 className="text-4xl font-black text-[#080808] mb-3 tracking-tight">{job.title}</h1>
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[#71717A] font-bold">
-                            <span className="text-[#7C5CFC]">{job.department}</span>
+                            <span className="text-[#7C5CFC] font-black uppercase tracking-widest text-xs">{job.company}</span>
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F1F1F1]" />
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4" />

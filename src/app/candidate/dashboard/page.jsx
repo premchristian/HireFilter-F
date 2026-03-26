@@ -66,7 +66,7 @@ export default function CandidateDashboard() {
 
                 const mappedActivities = latestApps.map(app => {
                     const status = (app.status || "applied").toLowerCase();
-                    const company = app.job?.department || "Company";
+                    const company = app.job?.createdBy?.company?.name || app.job?.department || "Company";
                     const jobTitle = app.job?.jobTitle || "Position";
                     const updatedAt = new Date(app.updatedAt || app.createdAt);
                     const now = new Date();
@@ -213,7 +213,7 @@ export default function CandidateDashboard() {
             return {
                 id: job.id,
                 title: job.title,
-                company: job.department || "Engineering",
+                company: job.company || job.department || "Engineering",
                 location: job.location,
                 type: job.type,
                 salary: job.salary,

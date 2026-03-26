@@ -52,7 +52,7 @@ export default function ApplicationsPage() {
                         return {
                             id: app._id || `temp-${index}`,
                             role: app.job.jobTitle || "Unknown Role", 
-                            company: app.job.department || "Company",
+                            company: app.job.createdBy?.company?.name || app.job.department || "Company",
                             logo: (app.job.jobTitle || "C").charAt(0),
                             logoColor: "bg-[#EBE8FF] text-[#7C5CFC]", 
                             status: app.status || "Applied",
