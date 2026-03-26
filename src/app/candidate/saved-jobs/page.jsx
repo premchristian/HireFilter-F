@@ -55,7 +55,7 @@ export default function SavedJobsPage() {
                 return {
                     id: job._id || job.id,
                     title: job.jobTitle || "Unknown Role",
-                    company: job.department || "Unknown Company",
+                    company: job.createdBy?.company?.name || job.department || "Unknown Company",
                     logo: (job.jobTitle || "U").charAt(0).toUpperCase(),
                     baseStyles: colors[index % colors.length],
                     location: job.location || "Not specified",

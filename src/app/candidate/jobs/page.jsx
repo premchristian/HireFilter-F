@@ -241,7 +241,7 @@ export default function CandidateJobsPage() {
 
         return {
             ...job,
-            company: job.department, 
+            company: job.company || job.department || "Unknown Company", 
             logo: job.title.charAt(0).toUpperCase(),
             logoStyle: colors[index % colors.length],
             tags: job.skills || []
