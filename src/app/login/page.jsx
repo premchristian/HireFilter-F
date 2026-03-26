@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mail, 
+  Phone,
   Lock, 
   Eye, 
   EyeOff, 
@@ -40,11 +41,14 @@ function AuthContent() {
   const [regLoading, setRegLoading] = useState(false);
   const [regName, setRegName] = useState("");
   const [regEmail, setRegEmail] = useState("");
+  const [regPhone, setRegPhone] = useState("");
+  const [regMethod, setRegMethod] = useState("email"); // Added regMethod
   const [regCompany, setRegCompany] = useState("");
   const [regAdminKey, setRegAdminKey] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState(false);
+  const [otpIdentifier, setOtpIdentifier] = useState("");
 
   // OTP Verification State
   const [otpSent, setOtpSent] = useState(false);
@@ -80,7 +84,7 @@ function AuthContent() {
     try {
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
-        { email: loginEmail.trim(), password: loginPassword.trim() }
+        { identifier: loginEmail.trim(), password: loginPassword.trim() }
       );
 
       const responseData = res.data.data || res.data;
@@ -121,14 +125,29 @@ function AuthContent() {
     setRegError("");
 
     try {
+      // Logic: Respect regMethod selection
+      let identifier = "";
+      if (regMethod === "mobile") {
+        if (!regPhone.trim()) throw new Error("Please provide a Mobile Number");
+        identifier = regPhone.trim();
+        if (!identifier.startsWith('+')) {
+            identifier = '+' + identifier;
+        }
+      } else {
+        if (!regEmail.trim()) throw new Error("Please provide an Email Address");
+        identifier = regEmail.trim();
+      }
+
+      setOtpIdentifier(identifier);
+
       // Step 1: Request OTP
       await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/send-signup-otp`, { 
-        email: regEmail.trim() 
+        identifier: identifier
       });
       setOtpSent(true);
-      setRegError("OTP sent to your email. Please verify.");
+      setRegError(`OTP sent to ${identifier}. Please verify.`);
     } catch (err) {
-      setRegError(err.response?.data?.message || err.response?.data?.errors?.[0] || "Registration failed");
+      setRegError(err.response?.data?.message || err.response?.data?.errors?.[0] || err.message || "Registration failed");
     } finally {
       setRegLoading(false);
     }
@@ -141,19 +160,22 @@ function AuthContent() {
     try {
       // Step 1: Verify OTP
       await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/verify-signup-otp`, {
-        email: regEmail.trim(),
+        identifier: otpIdentifier,
         otp: otpCode.trim()
       });
 
       // Step 2: Complete the Signup
       const payload = {
         name: regName,
-        email: regEmail.trim(),
+        email: regMethod === "email" ? regEmail.trim() : undefined,
+        phone: regMethod === "mobile" ? (regPhone.trim().startsWith('+') ? regPhone.trim() : '+' + regPhone.trim()) : undefined,
         password: regPassword,
         role: regRole,
       };
 
-      if (regRole === "hr") payload.company = regCompany;
+      if (regRole === "hr") {
+        payload.company = regCompany;
+      }
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/signup`, payload);
 
@@ -198,6 +220,19 @@ function AuthContent() {
             ))}
           </div>
 
+          <div className="flex gap-2 mb-4">
+            {["email", "mobile"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setRegMethod(m)}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all border ${regMethod === m ? 'bg-primary/10 border-primary text-primary' : 'bg-gray-50 border-transparent text-gray-400 hover:bg-gray-100'}`}
+              >
+                {m === "email" ? "REGISTER VIA EMAIL" : "REGISTER VIA MOBILE"}
+              </button>
+            ))}
+          </div>
+
           <form onSubmit={handleFormSubmit} className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary" />
@@ -220,7 +255,24 @@ function AuthContent() {
                 onChange={(e) => setRegEmail(e.target.value)}
                 placeholder="Email Address"
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none"
-                required
+                required={regMethod === "email"}
+                disabled={otpSent}
+              />
+            </div>
+
+            <div className="relative group">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary" />
+              <input
+                type="tel"
+                value={regPhone}
+                onChange={(e) => {
+                    let val = e.target.value;
+                    if (val && !val.startsWith('+')) val = '+' + val;
+                    setRegPhone(val);
+                }}
+                placeholder={regMethod === "mobile" ? "Mobile Number (Required)" : "Mobile Number (Optional)"}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none"
+                required={regMethod === "mobile"}
                 disabled={otpSent}
               />
             </div>
@@ -313,12 +365,12 @@ function AuthContent() {
           
           <form onSubmit={handleLoginSubmit} className="space-y-6">
             <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary" />
               <input
-                type="email"
+                type="text"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="Email address"
+                placeholder="Email or Mobile Number"
                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none"
                 required
               />

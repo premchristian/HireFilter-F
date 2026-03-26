@@ -54,6 +54,35 @@ export default function JobDetailsPage() {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-[#7C5CFC]/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
                 
                 <div className="absolute top-8 right-8 flex gap-4">
+                    <button 
+                        onClick={async () => {
+                            try {
+                                // Optimistically toggle for better UI feel
+                                setJob(prev => ({ 
+                                    ...prev, 
+                                    isSaved: !prev.isSaved,
+                                    savedCount: prev.isSaved ? Math.max(0, (prev.savedCount || 0) - 1) : (prev.savedCount || 0) + 1
+                                }));
+                                await toggleSaveJob(id);
+                            } catch (err) {
+                                // Revert optimistic update on failure
+                                setJob(prev => ({ 
+                                    ...prev, 
+                                    isSaved: !prev.isSaved,
+                                    savedCount: prev.isSaved ? (prev.savedCount || 0) + 1 : Math.max(0, (prev.savedCount || 0) - 1)
+                                }));
+                                console.error("Error toggling save:", err);
+                            }
+                        }}
+                        className={`group flex items-center gap-2 p-3 rounded-2xl border transition-all shadow-sm ${
+                            job.isSaved 
+                                ? "bg-[#7C5CFC] border-[#7C5CFC] text-white" 
+                                : "bg-[#F4F7FE] border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white"
+                        }`}
+                    >
+                        <Bookmark className={`w-5 h-5 ${job.isSaved ? "fill-white" : ""}`} />
+                        <span className="font-bold text-sm">{job.savedCount || 0}</span>
+                    </button>
                     <button className="p-3 rounded-2xl bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white transition-all shadow-sm">
                         <Share2 className="w-5 h-5" />
                     </button>

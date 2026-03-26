@@ -574,7 +574,11 @@ export default function ProfilePage() {
                                         type="tel"
                                         readOnly={!isEditing}
                                         value={profile.phone}
-                                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                                        onChange={(e) => {
+                                            let val = e.target.value;
+                                            if (val && !val.startsWith('+')) val = '+' + val;
+                                            setProfile({ ...profile, phone: val });
+                                        }}
                                         className={`w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] pl-12 pr-4 py-3.5 text-[#080808] font-medium outline-none focus:ring-2 focus:ring-[#7C5CFC]/20 ${!isEditing ? 'cursor-default' : ''}`}
                                     />
                                 </div>

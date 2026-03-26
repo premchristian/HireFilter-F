@@ -65,7 +65,7 @@ export default function LoginForm() {
         try {
             const res = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
-                { email: email.trim(), password: password.trim() }
+                { identifier: email.trim(), password: password.trim() }
             );
 
             const responseData = res.data.data || res.data;
