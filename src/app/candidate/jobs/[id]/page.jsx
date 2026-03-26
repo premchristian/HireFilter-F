@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, IndianRupee, Clock, Briefcase, CheckCircle, Bookmark } from "lucide-react";
+import { ArrowLeft, MapPin, IndianRupee, Clock, Briefcase, CheckCircle, Bookmark, Share2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -47,7 +47,7 @@ export default function JobDetailsPage() {
             setJob(prev => ({
                 ...prev,
                 isSaved: newIsSaved,
-                saveCount: newIsSaved ? prev.saveCount + 1 : Math.max(0, prev.saveCount - 1)
+                savedCount: newIsSaved ? (prev.savedCount || 0) + 1 : Math.max(0, (prev.savedCount || 0) - 1)
             }));
 
             await toggleSaveJob(id);
@@ -87,36 +87,7 @@ export default function JobDetailsPage() {
                 
                 <div className="absolute top-8 right-8 flex gap-4">
                     <button 
-<<<<<<< HEAD
                         onClick={handleToggleSave}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-2xl border transition-all shadow-md font-bold ${
-                            job.isSaved 
-                            ? "bg-primary border-primary text-white shadow-primary/30 scale-105" 
-                            : "bg-background border-[#F1F1F1] text-muted hover:text-primary hover:bg-white"
-                        }`}
-                    >
-                        <Bookmark className={`w-5 h-5 ${job.isSaved ? "fill-white" : ""}`} />
-                        {job.isSaved ? "Saved" : "Save Job"}
-=======
-                        onClick={async () => {
-                            try {
-                                // Optimistically toggle for better UI feel
-                                setJob(prev => ({ 
-                                    ...prev, 
-                                    isSaved: !prev.isSaved,
-                                    savedCount: prev.isSaved ? Math.max(0, (prev.savedCount || 0) - 1) : (prev.savedCount || 0) + 1
-                                }));
-                                await toggleSaveJob(id);
-                            } catch (err) {
-                                // Revert optimistic update on failure
-                                setJob(prev => ({ 
-                                    ...prev, 
-                                    isSaved: !prev.isSaved,
-                                    savedCount: prev.isSaved ? (prev.savedCount || 0) + 1 : Math.max(0, (prev.savedCount || 0) - 1)
-                                }));
-                                console.error("Error toggling save:", err);
-                            }
-                        }}
                         className={`group flex items-center gap-2 p-3 rounded-2xl border transition-all shadow-sm ${
                             job.isSaved 
                                 ? "bg-[#7C5CFC] border-[#7C5CFC] text-white" 
@@ -128,7 +99,6 @@ export default function JobDetailsPage() {
                     </button>
                     <button className="p-3 rounded-2xl bg-[#F4F7FE] border border-[#F1F1F1] text-[#71717A] hover:text-[#7C5CFC] hover:bg-white transition-all shadow-sm">
                         <Share2 className="w-5 h-5" />
->>>>>>> daily-updates
                     </button>
                 </div>
 
@@ -148,7 +118,7 @@ export default function JobDetailsPage() {
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F1F1F1]" />
                             <div className={`flex items-center gap-2 transition-colors ${job.isSaved ? "text-primary" : ""}`}>
                                 <Bookmark className={`w-4 h-4 ${job.isSaved ? "fill-current" : ""}`} />
-                                <span>{job.saveCount} candidate{job.saveCount !== 1 ? 's' : ''} saved this job</span>
+                                <span>{job.savedCount || 0} candidate{job.savedCount !== 1 ? 's' : ''} saved this job</span>
                             </div>
                         </div>
 

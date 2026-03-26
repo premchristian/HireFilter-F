@@ -59,14 +59,9 @@ export function JobProvider({ children }) {
                     description: job.jobDescription,
                     experience: job.experience ? `${job.experience.min}-${job.experience.max} years` : "Not specified",
                     skills: job.requiredSkills || [],
-<<<<<<< HEAD
-                    createdBy: job.createdBy || job.user || null, // Map creator ID
-                    saveCount: job.savedBy?.length || 0 // Count candidates who saved the job
-=======
                     createdBy: job.createdBy || job.user || null,
                     savedCount: job.savedCount || (job.savedBy ? job.savedBy.length : 0),
                     isSaved: savedIds.has(job._id?.toString()) || job.isSaved || false
->>>>>>> daily-updates
                 }));
                 setJobs(mappedJobs);
                 setLoading(false);
@@ -129,13 +124,8 @@ export function JobProvider({ children }) {
                         skills: job.requiredSkills || job.skills || [],
                         education: job.education || "Not specified",
                         lastDate: job.lastDate ? new Date(job.lastDate).toLocaleDateString() : "Open",
-<<<<<<< HEAD
-                        isSaved: savedJobIds.includes(job._id || job.id) || job.isSaved || false,
-                        saveCount: job.saveCount || job.savedCount || job.savedBy?.length || 0
-=======
                         isSaved: isActuallySaved || job.isSaved || false,
                         savedCount: job.savedCount || (job.savedBy ? job.savedBy.length : 0)
->>>>>>> daily-updates
                     };
                 }
             }
