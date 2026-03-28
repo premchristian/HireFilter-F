@@ -100,7 +100,8 @@ export default function JobsPage() {
         setEditFormData({
             jobTitle: job.title || "",
             location: job.location || "",
-            jobType: job.type || "Full-Time"
+            jobType: job.type || "Full-Time",
+            department: job.department || "Engineering"
         });
         setOpenMenuId(null);
     };
@@ -133,7 +134,8 @@ export default function JobsPage() {
                 experience: rawJob.experience || { min: 0, max: 0 },
                 salary: rawJob.salary || { min: 0, max: 0, currency: "USD" },
                 education: rawJob.education || "Any",
-                lastDate: rawJob.lastDate || new Date().toISOString()
+                lastDate: rawJob.lastDate || new Date().toISOString(),
+                department: editFormData.department || rawJob.department || "Engineering"
             };
 
             await axios.put(`${baseUrl}/api/jobs/${jobToEdit.id}`, payload, {
@@ -469,7 +471,7 @@ export default function JobsPage() {
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="col-span-2">
+                                    <div>
                                         <label className="text-sm font-medium text-[#080808]">Type</label>
                                         <select 
                                             value={editFormData.jobType} 
@@ -481,6 +483,21 @@ export default function JobsPage() {
                                             <option>Contract</option>
                                             <option>Internship</option>
                                             <option>Remote</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-medium text-[#080808]">Department</label>
+                                        <select 
+                                            value={editFormData.department || jobToEdit.department} 
+                                            onChange={(e) => setEditFormData({...editFormData, department: e.target.value})}
+                                            className="w-full mt-1 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[12px] px-4 py-2.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50"
+                                        >
+                                            <option>Engineering</option>
+                                            <option>IT</option>
+                                            <option>Design</option>
+                                            <option>Marketing</option>
+                                            <option>Sales</option>
+                                            <option>Account</option>
                                         </select>
                                     </div>
                                 </div>

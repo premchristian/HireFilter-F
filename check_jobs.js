@@ -43,6 +43,7 @@ async function checkJobs() {
 
         if (jobsRes.data.data.length > 0) {
             const job = jobsRes.data.data[0];
+            console.log("Full Job Object:", JSON.stringify(job, null, 2));
             console.log("Job ID:", job._id);
             console.log("Applicants Field:", job.applicants);
             console.log("Applicants Length:", job.applicants ? job.applicants.length : "N/A");

@@ -428,6 +428,26 @@ export default function StandaloneChat({ userRole, userName }) {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    const getMsgDate = (msg) => {
+        if (!msg) return "";
+        return msg.createdAt || msg.created_at || msg.timestamp || msg.date || "";
+    };
+
+    const formatMessageDate = (dateString) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        if (msgDate.getTime() === today.getTime()) return "Today";
+        if (msgDate.getTime() === yesterday.getTime()) return "Yesterday";
+        
+        return date.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
     const handleDeleteMessage = async (msgId) => {
     try {
         const token = getToken();
@@ -530,6 +550,11 @@ const cancelEditing = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-baseline mb-1">
                                                 <h3 className={`font-bold truncate ${isActive ? 'text-[#7C5CFC]' : 'text-[#080808]'}`}>{user.name}</h3>
+                                                {user.lastMessageDate && (
+                                                    <span className="text-[10px] text-[#71717A] ml-2 shrink-0">
+                                                        {formatMessageDate(user.lastMessageDate)}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="flex justify-between items-center gap-2">
                                                 <p className={`text-sm truncate capitalize ${isActive ? 'text-[#7C5CFC]/80 font-medium' : 'text-[#71717A] font-medium'}`}>{user.role || 'User'}</p>
@@ -568,6 +593,11 @@ const cancelEditing = () => {
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex justify-between items-baseline mb-1">
                                                         <h3 className={`font-bold truncate ${isActive ? 'text-[#7C5CFC]' : 'text-[#080808]'}`}>{data?.otherUser?.name}</h3>
+                                                        {getMsgDate(data?.lastMessage) && (
+                                                            <span className="text-[10px] text-[#71717A] ml-2 shrink-0">
+                                                                {formatMessageDate(getMsgDate(data.lastMessage))}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div className="flex justify-between items-center gap-2">
                                                         <p className={`text-sm truncate capitalize ${isActive ? 'text-[#7C5CFC]/80 font-medium' : 'text-[#71717A] font-medium'}`}>{data?.otherUser?.role || 'User'}</p>
@@ -689,9 +719,6 @@ const cancelEditing = () => {
                                 // or fallback if it has the sending flag.
                                 const activeContactId = String(activeContact._id || activeContact.id);
 
-                                console.log("msg", msg);
-
-
                                 const getStrId = (val) => typeof val === 'object' && val !== null ? (val._id || val.id) : val;
                                 const msgSenderId = String(getStrId(msg.senderId) || getStrId(msg.sender) || getStrId(msg.sender_id) || getStrId(msg.userId) || getStrId(msg.from) || "");
 
@@ -709,78 +736,93 @@ const cancelEditing = () => {
                                     isMe = true;
                                 }
 
+                                const prevMsg = messages[index - 1];
+                                const msgDateStr = getMsgDate(msg);
+                                const prevMsgDateStr = getMsgDate(prevMsg);
+
+                                const showDateSeparator = !prevMsg || 
+                                    new Date(prevMsgDateStr).toDateString() !== new Date(msgDateStr).toDateString();
+
                                 return (
-                                    <motion.div
-                                        key={msg._id || index}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        <div className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                            {/* <div className={`px-5 py-3.5 rounded-[16px] break-all sm:break-normal whitespace-pre-wrap w-full ${isMe
-                                                ? `bg-[#7C5CFC] text-white rounded-tr-none shadow-[0px_4px_20px_rgba(124,92,252,0.15)] opacity-${msg.status === 'sending' ? '80' : '100'}`
-                                                : 'bg-white text-[#080808] border border-[#F1F1F1] rounded-tl-none shadow-[0px_4px_20px_rgba(0,0,0,0.02)]'
-                                                }`}>
-                                                <p className="text-[15px] leading-relaxed font-medium">{msg.content || msg.text}</p>
-                                            </div> */}
-
-                                            <div
-    onMouseEnter={() => setHoveredMsgId(msg._id)}
-    onMouseLeave={() => setHoveredMsgId(null)}
-    className="relative"
->
-    <div
-        className={`px-5 py-3.5 rounded-[16px] break-all whitespace-pre-wrap w-full ${
-            isMe
-                ? `bg-[#7C5CFC] text-white rounded-tr-none ${editingMessageId === msg._id ? 'ring-2 ring-[#7C5CFC]/50 ring-offset-2' : ''}`
-                : "bg-white text-[#080808] border border-[#F1F1F1] rounded-tl-none"
-        }`}
-    >
-        <p className="text-[15px] leading-relaxed font-medium">
-            {msg.content || msg.text}
-        </p>
-    </div>
-
-    {isMe && hoveredMsgId === msg._id && !editingMessageId && (msg.content || msg.text) !== "This message was deleted" && (
-        <div className="absolute -top-3 right-2 flex gap-1 bg-white border border-[#E4E4E7] rounded-lg shadow px-1 py-0.5 z-10">
-            <button
-                onClick={() => startEditing(msg._id, msg.content || msg.text)}
-                className="p-1.5 hover:bg-[#EBE8FF] rounded-md text-[#71717A] hover:text-[#7C5CFC] transition-colors"
-                title="Edit message"
-            >
-                <Pencil className="w-3.5 h-3.5" suppressHydrationWarning />
-            </button>
-            <button
-                onClick={() => handleDeleteMessage(msg._id)}
-                className="p-1.5 hover:bg-red-50 rounded-md text-[#71717A] hover:text-red-500 transition-colors"
-                title="Delete message"
-            >
-                <Trash2 className="w-3.5 h-3.5" suppressHydrationWarning />
-            </button>
-        </div>
-    )}
-</div>
-                                            <div className={`flex items-center gap-1.5 mt-1.5 text-xs px-1 ${isMe ? 'text-[#7C5CFC]/80' : 'text-[#71717A]'}`}>
-                                                <span className="font-medium">{formatTime(msg.createdAt)}</span>
-                                                {isMe && (
-                                                    <span className={
-                                                        msg.status === "sending" 
-                                                            ? "text-[#71717A]/50" 
-                                                            : (msg.read || msg.isRead || msg.status === "read") 
-                                                                ? "text-[#7C5CFC]" 
-                                                                : "text-[#71717A]"
-                                                    }>
-                                                        {msg.status === "sending" 
-                                                            ? <Check className="w-3.5 h-3.5" suppressHydrationWarning /> 
-                                                            : (msg.read || msg.isRead || msg.status === "read") 
-                                                                ? <CheckCheck className="w-3.5 h-3.5" suppressHydrationWarning /> 
-                                                                : <Check className="w-3.5 h-3.5" suppressHydrationWarning />
-                                                        }
-                                                    </span>
-                                                )}
+                                    <div key={msg._id || index}>
+                                        {showDateSeparator && (
+                                            <div className="flex justify-center my-8 relative">
+                                                <div className="absolute inset-0 flex items-center">
+                                                    <div className="w-full border-t border-[#F1F1F1]"></div>
+                                                </div>
+                                                <span className="relative px-6 py-1.5 bg-white border border-[#F1F1F1] text-[#71717A] text-[11px] font-bold rounded-full shadow-sm uppercase tracking-wider">
+                                                    {formatMessageDate(msgDateStr)}
+                                                </span>
                                             </div>
-                                        </div>
-                                    </motion.div>
+                                        )}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-6`}
+                                        >
+                                            <div className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[65%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                                <div
+                                                    onMouseEnter={() => setHoveredMsgId(msg._id)}
+                                                    onMouseLeave={() => setHoveredMsgId(null)}
+                                                    className="relative"
+                                                >
+                                                    <div
+                                                        className={`px-5 py-3.5 rounded-[16px] break-all whitespace-pre-wrap w-full ${
+                                                            isMe
+                                                                ? `bg-[#7C5CFC] text-white rounded-tr-none ${editingMessageId === msg._id ? 'ring-2 ring-[#7C5CFC]/50 ring-offset-2' : ''}`
+                                                                : "bg-white text-[#080808] border border-[#F1F1F1] rounded-tl-none shadow-[0px_4px_20px_rgba(0,0,0,0.02)]"
+                                                        }`}
+                                                    >
+                                                        <p className="text-[15px] leading-relaxed font-medium">
+                                                            {msg.content || msg.text}
+                                                        </p>
+                                                    </div>
+
+                                                    {isMe && hoveredMsgId === msg._id && !editingMessageId && (msg.content || msg.text) !== "This message was deleted" && (
+                                                        <div className="absolute -top-3 right-2 flex gap-1 bg-white border border-[#E4E4E7] rounded-lg shadow px-1 py-0.5 z-10">
+                                                            <button
+                                                                onClick={() => startEditing(msg._id, msg.content || msg.text)}
+                                                                className="p-1.5 hover:bg-[#EBE8FF] rounded-md text-[#71717A] hover:text-[#7C5CFC] transition-colors"
+                                                                title="Edit message"
+                                                            >
+                                                                <Pencil className="w-3.5 h-3.5" suppressHydrationWarning />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteMessage(msg._id)}
+                                                                className="p-1.5 hover:bg-red-50 rounded-md text-[#71717A] hover:text-red-500 transition-colors"
+                                                                title="Delete message"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" suppressHydrationWarning />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className={`flex items-center gap-1.5 mt-1.5 text-xs px-1 ${isMe ? 'text-[#7C5CFC]/80' : 'text-[#71717A]'}`}>
+                                                    <span className="font-medium">
+                                                        {formatMessageDate(msgDateStr) === "Today" 
+                                                            ? formatTime(msgDateStr) 
+                                                            : `${formatMessageDate(msgDateStr)}, ${formatTime(msgDateStr)}`}
+                                                    </span>
+                                                    {isMe && (
+                                                        <span className={
+                                                            msg.status === "sending" 
+                                                                ? "text-[#71717A]/50" 
+                                                                : (msg.read || msg.isRead || msg.status === "read") 
+                                                                    ? "text-[#7C5CFC]" 
+                                                                    : "text-[#71717A]"
+                                                        }>
+                                                            {msg.status === "sending" 
+                                                                ? <Check className="w-3.5 h-3.5" suppressHydrationWarning /> 
+                                                                : (msg.read || msg.isRead || msg.status === "read") 
+                                                                    ? <CheckCheck className="w-3.5 h-3.5" suppressHydrationWarning /> 
+                                                                    : <Check className="w-3.5 h-3.5" suppressHydrationWarning />
+                                                            }
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    </div>
                                 );
                             })}
                             <div ref={messagesEndRef} />

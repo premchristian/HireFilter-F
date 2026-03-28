@@ -22,12 +22,10 @@ import {
 import axios from 'axios';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMaintenance } from "@/context/MaintenanceContext";
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isMaintenanceMode } = useMaintenance();
 
   const [isLogin, setIsLogin] = useState(true);
   
@@ -152,13 +150,6 @@ function AuthContent() {
       window.dispatchEvent(new Event("auth-change"));
 
       const userRole = role.toLowerCase();
-      if (isMaintenanceMode && userRole !== "admin") {
-        setErrorMessage("System is in maintenance mode. Only Admins can log in.");
-        setErrorPopup(true);
-        localStorage.clear();
-        return;
-      }
-
       if (userRole === "admin") router.push("/admin/dashboard");
       else if (userRole === "hr") router.push("/hr/dashboard");
       else router.push("/candidate/dashboard");
@@ -249,13 +240,13 @@ function AuthContent() {
   };
 
   return (
-    <div className="w-full max-w-6xl h-full min-h-[700px] bg-white rounded-[2.5rem] overflow-hidden shadow-2xl relative flex shadow-primary/10 border border-white">
+    <div className="w-full max-w-6xl h-auto md:h-full md:min-h-[700px] bg-white rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl relative flex flex-col md:flex-row shadow-primary/10 border border-white">
       
       {/* Forms Container */}
-      <div className="w-full h-full flex relative z-0">
+      <div className="w-full h-full flex flex-col md:flex-row relative z-0">
         
         {/* Register Side (Left half under cover when login active) */}
-        <div className={`w-full md:w-1/2 flex flex-col justify-center p-8 md:p-12 transition-all duration-700 ${isLogin ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`w-full md:w-1/2 flex flex-col justify-center p-6 md:p-12 transition-all duration-700 ${isLogin ? 'hidden md:flex opacity-0 pointer-events-none' : 'opacity-100 flex'} ${isLogin ? '' : 'pb-24 md:pb-12'}`}>
           <h2 className="text-4xl font-bold text-gray-800 mb-2">Create Account</h2>
           <p className="text-gray-500 mb-8">Join HireFilter and start your journey</p>
           
@@ -284,7 +275,7 @@ function AuthContent() {
             ))}
           </div>
 
-          <form onSubmit={handleFormSubmit} className="space-y-4 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
+          <form onSubmit={handleFormSubmit} className="space-y-4 md:max-h-[400px] overflow-y-visible md:overflow-y-auto pr-2 scrollbar-hide">
             <div className="relative group">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-primary" />
               <input
@@ -459,7 +450,7 @@ function AuthContent() {
         </div>
 
         {/* Login Side (Right half under cover when register active) */}
-        <div className={`w-full md:w-1/2 flex flex-col justify-center p-8 md:p-12 md:ml-auto transition-all duration-700 ${!isLogin ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className={`w-full md:w-1/2 flex flex-col justify-center p-6 md:p-12 md:ml-auto transition-all duration-700 ${!isLogin ? 'hidden md:flex opacity-0 pointer-events-none' : 'opacity-100 flex'}`}>
           <h2 className="text-4xl font-bold text-gray-800 mb-2">Sign In</h2>
           <p className="text-gray-500 mb-10">Welcome back to HireFilter</p>
           
@@ -571,7 +562,7 @@ function AuthContent() {
         }}
         initial={false}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="absolute top-0 left-0 w-full md:w-1/2 h-full bg-gradient-to-br from-primary to-primary-dark z-10 flex flex-col items-center justify-center p-12 text-center text-white overflow-hidden pointer-events-auto"
+        className="hidden md:flex absolute top-0 left-0 w-full md:w-1/2 h-full bg-gradient-to-br from-primary to-primary-dark z-10 flex-col items-center justify-center p-12 text-center text-white overflow-hidden pointer-events-auto"
       >
         {/* Animated Background Elements */}
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
@@ -616,9 +607,11 @@ function AuthContent() {
         </motion.div>
       </motion.div>
 
-      {/* Mobile Switching Bar (Shown only on small screens) */}
-      <div className="md:hidden absolute bottom-0 left-0 right-0 p-6 flex justify-center bg-white border-t border-gray-100 z-20">
-         <button onClick={() => setIsLogin(!isLogin)} className="text-primary font-bold">
+      <div className="md:hidden sticky md:absolute bottom-0 left-0 right-0 p-6 flex justify-center bg-white border-t border-gray-100 z-20">
+         <button onClick={() => {
+            setIsLogin(!isLogin);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+         }} className="text-primary font-bold">
             {isLogin ? "Need an account? Sign Up" : "Already have an account? Sign In"}
          </button>
       </div>
@@ -654,16 +647,22 @@ function AuthContent() {
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white p-8 rounded-[2.5rem] text-center max-w-sm w-full shadow-2xl"
+            className="bg-white p-8 rounded-[2.5rem] text-center max-w-sm w-full shadow-2xl relative overflow-hidden"
           >
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-red-50`}>
               <div className="w-3 h-3 bg-red-500 rounded-full animate-ping" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Authentication Failed</h3>
-            <p className="text-gray-500 mb-8">{errorMessage}</p>
+
+            <h3 className="text-xl font-bold text-gray-800 mb-2">
+              Authentication Failed
+            </h3>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">{errorMessage}</p>
+            
             <button 
-              onClick={() => setErrorPopup(false)}
-              className="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold"
+              onClick={() => {
+                setErrorPopup(false);
+              }}
+              className={`w-full py-4 rounded-2xl font-bold transition-all bg-gray-100 text-gray-700`}
             >
               Try Again
             </button>

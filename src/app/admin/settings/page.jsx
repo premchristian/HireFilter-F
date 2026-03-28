@@ -18,14 +18,13 @@ import {
     Eye,
     EyeOff
 } from "lucide-react";
-import { useMaintenance } from "@/context/MaintenanceContext";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function AdminSettingsPage() {
-    const { isMaintenanceMode, toggleMaintenanceMode } = useMaintenance();
     const [adminName, setAdminName] = useState("");
     const [adminEmail, setAdminEmail] = useState("");
+    const [adminPhone, setAdminPhone] = useState("");
     const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
     // Password State
@@ -41,28 +40,31 @@ export default function AdminSettingsPage() {
     const [isSendingOTP, setIsSendingOTP] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
+    const [otpMethod, setOtpMethod] = useState("email"); // email or phone
 
-    const handleRequestOTP = async () => {
+    const handleRequestOTP = async (method = "email") => {
         const email = localStorage.getItem("userEmail");
-        if (!email) {
-            setPasswordError("Session expired. Please log in again.");
+        const identifier = method === "phone" ? adminPhone : email;
+
+        if (!identifier) {
+            setPasswordError(method === "phone" ? "Phone number not found in profile." : "Session expired. Please log in again.");
             return;
         }
 
         setIsSendingOTP(true);
         setPasswordError("");
         setOtpSent(false);
+        setOtpMethod(method);
 
         try {
-            console.log("Requesting OTP for admin email:", email.trim());
+            console.log(`Requesting OTP for admin ${method}:`, identifier.trim());
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/forgot-password`, {
-                email: email.trim()
+                [method === "phone" ? "identifier" : "email"]: identifier.trim()
             });
             console.log("OTP Request Response:", res.data);
             setOtpSent(true);
         } catch (err) {
-            console.error("OTP Request Failed. Status:", err.response?.status);
-            console.error("Error Data:", err.response?.data);
+            console.error("OTP Request Failed:", err.response?.data);
             setPasswordError(err.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
             setIsSendingOTP(false);
@@ -83,6 +85,7 @@ export default function AdminSettingsPage() {
                     const profile = json.data;
                     setAdminName(profile.name || "");
                     setAdminEmail(profile.email || "");
+                    setAdminPhone(profile.phone || "");
                 }
             } catch (err) {
                 console.error("Failed to fetch admin profile:", err);
@@ -114,11 +117,12 @@ export default function AdminSettingsPage() {
         setPasswordError("");
 
         try {
-            console.log("Attempting admin password reset for:", email.trim(), "with OTP:", passwordForm.otp.trim());
+            const identifier = otpMethod === "phone" ? adminPhone : email;
+            console.log(`Attempting admin password reset for ${otpMethod}:`, identifier.trim());
             const res = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/reset-password`,
                 {
-                    email: email.trim(),
+                    [otpMethod === "phone" ? "identifier" : "email"]: identifier.trim(),
                     otp: passwordForm.otp.trim(),
                     newPassword: passwordForm.newPassword
                 }
@@ -202,23 +206,6 @@ export default function AdminSettingsPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-white/2 border border-white/5">
-                                <div>
-                                    <p className="text-sm font-bold text-white">Maintenance Mode</p>
-                                    <p className="text-xs text-gray-500">Disable candidate and employer access for system updates</p>
-                                </div>
-                                <div 
-                                    onClick={toggleMaintenanceMode}
-                                    className={`w-12 h-6 rounded-full relative cursor-pointer ring-1 transition-all ${isMaintenanceMode ? "bg-amber-500 ring-amber-400/50" : "bg-white/10 ring-white/10"}`}
-                                >
-                                    <motion.div 
-                                        animate={{ x: isMaintenanceMode ? 24 : 4 }}
-                                        className={`absolute top-1 w-4 h-4 rounded-full transition-colors ${isMaintenanceMode ? "bg-black" : "bg-gray-400"}`} 
-                                    />
-                                </div>
-                            </div>
-                        </div>
                     </motion.div>
 
                 </div>
@@ -238,7 +225,6 @@ export default function AdminSettingsPage() {
                             <button 
                                 onClick={() => {
                                     setShowPasswordModal(true);
-                                    handleRequestOTP();
                                 }}
                                 className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-xl border border-white/5 transition-all flex items-center justify-center gap-2 group"
                             >
@@ -284,18 +270,28 @@ export default function AdminSettingsPage() {
                                 </p>
 
                                 <form onSubmit={handleUpdatePassword} className="w-full space-y-4">
-                                    {/* OTP Field */}
                                     <div className="text-left space-y-2">
-                                        <div className="flex justify-between items-end">
-                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">OTP (Sent to Email)</label>
-                                            <button 
-                                                type="button"
-                                                onClick={handleRequestOTP}
-                                                disabled={isSendingOTP}
-                                                className="text-[10px] font-bold text-amber-500 hover:text-amber-400 mb-1 transition-colors disabled:opacity-50"
-                                            >
-                                                {isSendingOTP ? "SENDING..." : otpSent ? "RESEND OTP" : "REQUEST OTP"}
-                                            </button>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Request OTP via:</label>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRequestOTP("email")}
+                                                    disabled={isSendingOTP}
+                                                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${otpMethod === "email" && otpSent ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/5 text-gray-500 border-white/5 hover:border-amber-500/20'}`}
+                                                >
+                                                    {isSendingOTP && otpMethod === "email" ? "SENDING..." : "OTP ON EMAIL"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRequestOTP("phone")}
+                                                    disabled={isSendingOTP || !adminPhone}
+                                                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${otpMethod === "phone" && otpSent ? 'bg-amber-500 text-black border-amber-500' : 'bg-white/5 text-gray-500 border-white/5 hover:border-amber-500/20'} ${!adminPhone ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    title={!adminPhone ? "Phone number not available" : ""}
+                                                >
+                                                    {isSendingOTP && otpMethod === "phone" ? "SENDING..." : "OTP ON NUMBER"}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="relative">
                                             <input 

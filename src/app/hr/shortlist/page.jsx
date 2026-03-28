@@ -7,6 +7,7 @@ import { useJobContext } from "@/context/JobContext";
 import axios from "axios";
 import Link from "next/link";
 import { getUserId, logout } from "@/utils/auth";
+import jsPDF from "jspdf";
 
 const tabs = ["All", "Shortlisted", "Interviewing", "Offer", "Hired"];
 
@@ -62,7 +63,6 @@ export default function ShortlistPage() {
                  }
 
                  // Fetch applicants for each of MY jobs
-                 // Note: Ideally, there would be a single API endpoint for this.
                  const promises = myJobs.map(job => 
                      axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/application/${job.id}/getAll`, {
                          headers: { Authorization: `Bearer ${token}` }
@@ -100,7 +100,17 @@ export default function ShortlistPage() {
                          phone: app.user?.phone || app.phone || "No phone",
                          jobId: app.jobId,
                          avatar: getImgUrl(app.profileImage) || getImgUrl(app.user?.profileImage) || getImgUrl(app.user?.profile?.image) || getImgUrl(app.user?.avatar),
-                         match: calculateMatchScore(app.skills || app.user?.profile?.skills || [], getJobSkills(app.jobId))
+                         match: calculateMatchScore(app.skills || app.user?.profile?.skills || [], getJobSkills(app.jobId)),
+                         skills: Array.isArray(app.skills) ? app.skills : (typeof app.skills === "string" ? [app.skills] : (app.user?.profile?.skills || [])),
+                         experience: Array.isArray(app.experienceList) ? app.experienceList : (app.experience ? [{ role: "Experience", duration: `${app.experience} years` }] : (app.user?.profile?.experience || [])),
+                         education: Array.isArray(app.education) ? app.education : (typeof app.education === "string" ? [{ degree: app.education }] : (app.user?.profile?.education || [])),
+                         projects: app.projects || [],
+                         bio: app.user?.profile?.bio || app.user?.bio || "",
+                         portfolio: app.links?.portfolio || app.user?.profile?.portfolio || app.user?.portfolio || "",
+                         linkedin: app.links?.linkedin || app.user?.profile?.linkedin || "",
+                         resume: app.resume || app.user?.profile?.resumeLink || app.user?.resume || "",
+                         answers: app.answers || [],
+                         salary: app.salary || app.salaryExpectation || ""
                      };
                  });
                  
@@ -168,6 +178,232 @@ export default function ShortlistPage() {
         } finally {
             setUpdatingId(null);
         }
+    };
+
+    const downloadCandidatePDF = (candidate) => {
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFillColor(124, 92, 252); // Brand purple
+        doc.rect(0, 0, 210, 40, "F");
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont("helvetica", "bold");
+        doc.text("Candidate Profile", 20, 25);
+        
+        // Candidate Details Section
+        doc.setTextColor(8, 8, 8);
+        doc.setFontSize(18);
+        doc.text(candidate.name, 20, 60);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(113, 113, 122);
+        doc.setFont("helvetica", "normal");
+        doc.text(candidate.role, 20, 68);
+        
+        // Divider
+        doc.setDrawColor(241, 241, 241);
+        doc.line(20, 75, 190, 75);
+        
+        // Info Grid
+        doc.setTextColor(8, 8, 8);
+        doc.setFont("helvetica", "bold");
+        doc.text("Contact Information", 20, 90);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(113, 113, 122);
+        doc.text(`Email: ${candidate.email}`, 20, 100);
+        doc.text(`Phone: ${candidate.phone}`, 20, 108);
+        doc.text(`Location: ${candidate.location}`, 20, 116);
+        if (candidate.salary) {
+            doc.text(`Expected Salary: ${candidate.salary}`, 20, 124);
+        }
+        
+        // Match Score
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(124, 92, 252);
+        doc.setFontSize(16);
+        doc.text(`Match Score: ${candidate.match}`, 20, 140);
+        
+        // Cover Letter Section
+        if (candidate.coverLetter) {
+            yPos = 155;
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Cover Letter", 20, yPos);
+            
+            yPos += 10;
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(113, 113, 122);
+            const clText = doc.splitTextToSize(candidate.coverLetter, 170);
+            doc.text(clText, 20, yPos);
+            yPos += clText.length * 6 + 10;
+        } else {
+            yPos = 155;
+        }
+
+        // Divider
+        doc.setDrawColor(241, 241, 241);
+        doc.line(20, yPos, 190, yPos);
+        yPos += 15;
+        doc.setTextColor(8, 8, 8);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("Professional Skills", 20, yPos);
+        
+        yPos += 10;
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(113, 113, 122);
+        const skillsText = candidate.skills.length > 0 ? candidate.skills.join(", ") : "N/A";
+        const splitSkills = doc.splitTextToSize(skillsText, 170);
+        doc.text(splitSkills, 20, yPos);
+        yPos += splitSkills.length * 7;
+        
+        // Experience Section
+        if (candidate.experience && candidate.experience.length > 0) {
+            yPos += 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Experience", 20, yPos);
+            
+            yPos += 10;
+            doc.setFontSize(11);
+            candidate.experience.forEach(exp => {
+                if (yPos > 250) { doc.addPage(); yPos = 20; }
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(8, 8, 8);
+                doc.text(`${exp.role || 'Position'} at ${exp.company || 'Company'}`, 25, yPos);
+                yPos += 6;
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(124, 92, 252);
+                doc.text(`${exp.duration || ''}`, 25, yPos);
+                yPos += 6;
+                if (exp.description) {
+                    doc.setTextColor(113, 113, 122);
+                    const eDesc = doc.splitTextToSize(exp.description, 160);
+                    doc.text(eDesc, 25, yPos);
+                    yPos += eDesc.length * 6 + 4;
+                } else {
+                    yPos += 4;
+                }
+            });
+        }
+        
+        // Education Section
+        if (candidate.education && candidate.education.length > 0) {
+            yPos += 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Education", 20, yPos);
+            
+            yPos += 10;
+            doc.setFontSize(11);
+            candidate.education.forEach(edu => {
+                if (yPos > 260) { doc.addPage(); yPos = 20; }
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(8, 8, 8);
+                doc.text(`${edu.degree || 'Degree'}`, 25, yPos);
+                yPos += 6;
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(113, 113, 122);
+                doc.text(`${edu.institution || edu.school || 'Institution'} | ${edu.year || ''}`, 25, yPos);
+                yPos += 10;
+            });
+        }
+
+        // Projects Section
+        if (candidate.projects && candidate.projects.length > 0) {
+            yPos += 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Projects", 20, yPos);
+            
+            yPos += 10;
+            candidate.projects.forEach(proj => {
+                if (yPos > 250) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(8, 8, 8);
+                doc.text(proj.projectName || proj.name || "Project", 25, yPos);
+                yPos += 6;
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(113, 113, 122);
+                const pDesc = doc.splitTextToSize(proj.description || "No description", 160);
+                doc.text(pDesc, 25, yPos);
+                yPos += pDesc.length * 6 + 4;
+            });
+        }
+        
+        // Links Section
+        if (candidate.portfolio || candidate.resume || candidate.linkedin) {
+            yPos += 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Links & Documents", 20, yPos);
+            
+            yPos += 10;
+            doc.setFontSize(11);
+            doc.setTextColor(124, 92, 252);
+            if (candidate.linkedin) {
+                doc.text(`LinkedIn: ${candidate.linkedin}`, 25, yPos);
+                yPos += 8;
+            }
+            if (candidate.portfolio) {
+                doc.text(`Portfolio: ${candidate.portfolio}`, 25, yPos);
+                yPos += 8;
+            }
+            if (candidate.resume) {
+                doc.text(`Resume: ${candidate.resume}`, 25, yPos);
+                yPos += 8;
+            }
+        }
+
+        // Application Answers
+        if (candidate.answers && candidate.answers.length > 0) {
+            yPos += 10;
+            if (yPos > 260) { doc.addPage(); yPos = 20; }
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(8, 8, 8);
+            doc.text("Application Questions", 20, yPos);
+            
+            yPos += 10;
+            candidate.answers.forEach(ans => {
+                if (yPos > 240) { doc.addPage(); yPos = 20; }
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(8, 8, 8);
+                const qText = doc.splitTextToSize(ans.question || "Question", 170);
+                doc.text(qText, 25, yPos);
+                yPos += qText.length * 6;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(113, 113, 122);
+                const aText = doc.splitTextToSize(ans.answer || "No answer", 170);
+                doc.text(aText, 25, yPos);
+                yPos += aText.length * 6 + 4;
+            });
+        }
+        
+        // Footer
+        doc.setFontSize(10);
+        doc.setTextColor(161, 161, 170);
+        doc.text(`Generated by HireFilter on ${new Date().toLocaleDateString()}`, 20, 285);
+        
+        // Save
+        doc.save(`Full_Profile_${candidate.name.replace(/\s+/g, "_")}.pdf`);
     };
 
 
@@ -332,7 +568,11 @@ export default function ShortlistPage() {
                                                     <Eye className="w-5 h-5" />
                                                 </button>
                                             </Link>
-                                             <button className="p-2.5 bg-[#F4F7FE] text-[#71717A] hover:bg-[#FFFFFF] hover:text-[#080808] border border-[#F1F1F1] rounded-[12px] transition-all shadow-sm">
+                                             <button 
+                                                onClick={() => downloadCandidatePDF(candidate)}
+                                                className="p-2.5 bg-[#F4F7FE] text-[#71717A] hover:bg-[#FFFFFF] hover:text-[#080808] border border-[#F1F1F1] rounded-[12px] transition-all shadow-sm"
+                                                title="Download PDF"
+                                             >
                                                 <Download className="w-5 h-5" />
                                             </button>
                                             {/* Final Actions based on status */}

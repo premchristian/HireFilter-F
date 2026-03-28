@@ -26,9 +26,14 @@ export function JobProvider({ children }) {
             }
 
             // 1. Fetch EVERYTHING (All jobs and User's saved jobs)
+            const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
+            const fetchSaved = userRole === "user" || userRole === "candidate";
+
             const [response, savedResponse] = await Promise.all([
                 axios.get(`${baseUrl}/api/jobs`, { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get(`${baseUrl}/api/jobs/saved`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
+                fetchSaved 
+                    ? axios.get(`${baseUrl}/api/jobs/saved`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => ({ data: { data: [] } }))
+                    : Promise.resolve({ data: { data: { savedJobs: [] } } })
             ]);
 
             const jobsData = response.data.data;
@@ -48,8 +53,8 @@ export function JobProvider({ children }) {
                 const mappedJobs = jobsArray.map(job => ({
                     id: job._id,
                     title: job.jobTitle,
-                    company: job.createdBy?.company?.name || job.department || "Engineering",
-                    department: job.department || "Engineering",
+                    company: job.createdBy?.company?.name || job.companyName || job.department || "HireFilter",
+                    department: job.department || job.createdBy?.company?.name || job.companyName || "HireFilter",
                     type: job.jobType,
                     location: job.location,
                     applicants: job.applicants ? job.applicants.length : 0,
@@ -112,8 +117,8 @@ export function JobProvider({ children }) {
                     return {
                         id: job._id || job.id,
                         title: job.jobTitle || job.title,
-                        company: job.createdBy?.company?.name || job.department || "Engineering",
-                        department: job.department || "Engineering",
+                        company: job.createdBy?.company?.name || job.companyName || job.department || "HireFilter",
+                        department: job.department || job.createdBy?.company?.name || job.companyName || "HireFilter",
                         type: job.jobType || job.type,
                         location: job.location,
                         applicants: job.applicants || [],
@@ -166,16 +171,31 @@ export function JobProvider({ children }) {
                     Authorization: `Bearer ${token}`
                 }
             });
-            // Update local savedIds
+
+            // Update local jobs array state immediately for reactive UI
+            setJobs(prevJobs => prevJobs.map(job => {
+                if (job.id === id) {
+                    const newIsSaved = !job.isSaved;
+                    return {
+                        ...job,
+                        isSaved: newIsSaved,
+                        savedCount: newIsSaved ? (job.savedCount + 1) : Math.max(0, job.savedCount - 1)
+                    };
+                }
+                return job;
+            }));
+
+            // Also refresh the savedJobIds list to keep everything in sync
             await fetchSavedJobIds();
+            
             return response.data;
         } catch (error) {
             console.error("Error toggling save job:", error);
             if (error.response?.data) {
                 console.error("Backend response:", error.response.data);
-                alert(`Backend Error: ${JSON.stringify(error.response.data)}`);
+                // alert(`Backend Error: ${JSON.stringify(error.response.data)}`);
             } else {
-                alert(`Error: ${error.message} - Please check if the backend route exists.`);
+                // alert(`Error: ${error.message} - Please check if the backend route exists.`);
             }
             throw error;
         }
@@ -185,6 +205,13 @@ export function JobProvider({ children }) {
         try {
             const token = localStorage.getItem("token");
             if (!token) return [];
+
+            const userRole = (localStorage.getItem("userRole") || "").toLowerCase();
+            if (userRole !== "user" && userRole !== "candidate") {
+                console.log(`[JobContext] Skipping saved jobs fetch for role: ${userRole}`);
+                return [];
+            }
+
             const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://hire-filter-backend.onrender.com";
             const response = await axios.get(`${baseUrl}/api/jobs/saved`, {
                 headers: { Authorization: `Bearer ${token}` }

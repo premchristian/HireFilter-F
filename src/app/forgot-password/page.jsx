@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mail, 
@@ -12,7 +12,11 @@ import {
   CheckCircle,
   Shield,
   Eye,
-  EyeOff
+  EyeOff,
+  Phone,
+  ChevronDown,
+  Search,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
@@ -50,6 +54,42 @@ export default function ForgotPasswordPage() {
     const [step, setStep] = useState("request"); // request, reset, success
     const [error, setError] = useState("");
     const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
+    const [method, setMethod] = useState("email"); // email or phone
+    const [countries, setCountries] = useState([]);
+    const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCountry, setSelectedCountry] = useState({ code: '+91', flag: '🇮🇳' });
+
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                const res = await axios.get("https://restcountries.com/v3.1/all?fields=name,flags,idd");
+                const countryData = res.data
+                    .filter(c => c.idd?.root)
+                    .map(c => {
+                        const root = c.idd.root || "";
+                        const suffixes = c.idd.suffixes || [];
+                        const code = (root === "+1" || suffixes.length > 5) ? root : (root + (suffixes[0] || ""));
+                        return {
+                            name: c.name.common,
+                            flag: c.flags.emoji || '🌐',
+                            code: code
+                        };
+                    })
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                
+                const indiaIndex = countryData.findIndex(c => c.name === "India");
+                if (indiaIndex > -1) {
+                    const india = countryData.splice(indiaIndex, 1)[0];
+                    countryData.unshift(india);
+                }
+                setCountries(countryData);
+            } catch (err) {
+                console.error("Failed to fetch countries:", err);
+            }
+        };
+        fetchCountries();
+    }, []);
 
     const handleRequestOTP = async (e) => {
         e.preventDefault();
@@ -57,15 +97,15 @@ export default function ForgotPasswordPage() {
         setError("");
 
         try {
-            console.log("Requesting OTP for email:", email.trim());
+            const finalIdentifier = method === "phone" ? (selectedCountry.code + email.trim().replace(/^\+/, "")) : email.trim();
+            console.log(`Requesting OTP for ${method}:`, finalIdentifier);
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/forgot-password`, {
-                email: email.trim()
+                [method === "phone" ? "identifier" : "email"]: finalIdentifier
             });
             console.log("OTP Request Response:", res.data);
             setStep("reset");
         } catch (err) {
-            console.error("OTP Request Failed. Status:", err.response?.status);
-            console.error("Error Data:", err.response?.data);
+            console.error("OTP Request Failed:", err.response?.data);
             setError(err.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
             setLoading(false);
@@ -87,17 +127,17 @@ export default function ForgotPasswordPage() {
         setError("");
 
         try {
-            console.log("Attempting password reset for:", email.trim(), "with OTP:", otp.trim());
+            const finalIdentifier = method === "phone" ? (selectedCountry.code + email.trim().replace(/^\+/, "")) : email.trim();
+            console.log(`Attempting password reset for ${method}:`, finalIdentifier, "with OTP:", otp.trim());
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/reset-password`, {
-                email: email.trim(),
+                [method === "phone" ? "identifier" : "email"]: finalIdentifier,
                 otp: otp.trim(),
                 newPassword: newPassword
             });
             console.log("Password Reset Response:", res.data);
             setStep("success");
         } catch (err) {
-            console.error("Password Reset Failed. Status:", err.response?.status);
-            console.error("Error Data:", err.response?.data);
+            console.error("Password Reset Failed:", err.response?.data);
             setError(err.response?.data?.message || "Reset failed. Please check your OTP and try again.");
         } finally {
             setLoading(false);
@@ -157,18 +197,98 @@ export default function ForgotPasswordPage() {
                             >
                                 <div className="text-center md:text-left">
                                     <h1 className="text-4xl font-bold text-gray-800 mb-2">Forgot Password</h1>
-                                    <p className="text-gray-500">Don't worry! Enter your email and we'll send you an OTP to reset your password.</p>
+                                    <p className="text-gray-500">Don't worry! select a method and we'll send you an OTP to reset your password.</p>
+                                </div>
+
+                                {/* Method Selection */}
+                                <div className="flex p-1 bg-gray-100 rounded-2xl">
+                                    <button
+                                        onClick={() => setMethod("email")}
+                                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${method === "email" ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <Mail className="w-4 h-4" />
+                                        Email
+                                    </button>
+                                    <button
+                                        onClick={() => setMethod("phone")}
+                                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${method === "phone" ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        <Phone className="w-4 h-4" />
+                                        Phone Number
+                                    </button>
                                 </div>
 
                                 <form onSubmit={handleRequestOTP} className="space-y-6">
-                                    <Input 
-                                        icon={Mail}
-                                        type="email"
-                                        required
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="Enter your email"
-                                    />
+                                    {method === "phone" ? (
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                                                    className="flex items-center gap-1 p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-700 font-bold border border-gray-200 bg-white"
+                                                >
+                                                    <span>{selectedCountry.flag}</span>
+                                                    <span className="text-xs">{selectedCountry.code}</span>
+                                                    <ChevronDown size={14} className={`transition-transform ${showCountryDropdown ? 'rotate-180' : ''}`} />
+                                                </button>
+                                            </div>
+
+                                            {showCountryDropdown && (
+                                                <div className="absolute left-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 p-3 animate-in fade-in zoom-in duration-200">
+                                                    <div className="relative mb-3">
+                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search country..."
+                                                            value={searchQuery}
+                                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-primary"
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
+                                                        {countries
+                                                            .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.code.includes(searchQuery))
+                                                            .map((c, i) => (
+                                                                <button
+                                                                    key={i}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSelectedCountry({ code: c.code, flag: c.flag });
+                                                                        setShowCountryDropdown(false);
+                                                                        setSearchQuery("");
+                                                                    }}
+                                                                    className="w-full flex items-center justify-between p-2 hover:bg-primary/5 rounded-xl transition-colors group text-left"
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="text-xl">{c.flag}</span>
+                                                                        <span className="text-sm font-bold text-gray-700 group-hover:text-primary">{c.name}</span>
+                                                                    </div>
+                                                                    <span className="text-xs font-bold text-primary">{c.code}</span>
+                                                                </button>
+                                                            ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <input
+                                                type="tel"
+                                                required
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="Enter your phone number"
+                                                className="w-full pl-28 pr-4 py-4 bg-gray-50 border border-transparent rounded-2xl focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all outline-none text-gray-800"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <Input 
+                                            icon={Mail}
+                                            type="email"
+                                            required
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="Enter your email"
+                                        />
+                                    )}
 
                                     {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
 
@@ -210,7 +330,7 @@ export default function ForgotPasswordPage() {
                             >
                                 <div className="text-center md:text-left">
                                     <h1 className="text-4xl font-bold text-gray-800 mb-2">Reset Password</h1>
-                                    <p className="text-gray-500">Enter the OTP sent to <span className="text-primary font-bold">{email}</span> and your new password.</p>
+                                    <p className="text-gray-500">Enter the OTP sent to <span className="text-primary font-bold">{method === "phone" ? (selectedCountry.code + email) : email}</span> and your new password.</p>
                                 </div>
 
                                 <form onSubmit={handleResetPassword} className="space-y-6">
@@ -275,7 +395,7 @@ export default function ForgotPasswordPage() {
                                         className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-primary transition-colors group self-start"
                                     >
                                         <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                                        Wrong email? Try again
+                                        Wrong {method}? Try again
                                     </button>
                                 </div>
                             </motion.div>

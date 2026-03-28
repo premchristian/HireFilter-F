@@ -66,6 +66,7 @@ export default function CreateJobPage() {
                 },
                 education: formData.education, // Assumption: key is 'education'
                 lastDate: formData.lastDate,
+                department: formData.department,
             };
             
             // Remove department from payload based on error message
@@ -173,6 +174,7 @@ export default function CreateJobPage() {
                                         className="w-full bg-[#F4F7FE] border border-[#F1F1F1] rounded-[12px] px-4 py-3 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 focus:border-transparent transition-all appearance-none"
                                     >
                                         <option className="bg-[#FFFFFF] text-[#080808]">Engineering</option>
+                                        <option className="bg-[#FFFFFF] text-[#080808]">IT</option>
                                         <option className="bg-[#FFFFFF] text-[#080808]">Design</option>
                                         <option className="bg-[#FFFFFF] text-[#080808]">Marketing</option>
                                         <option className="bg-[#FFFFFF] text-[#080808]">Sales</option>
@@ -301,16 +303,6 @@ export default function CreateJobPage() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-[#080808]">Attachments (Optional)</label>
-                                    <div className="border-2 border-dashed border-[#F1F1F1] rounded-[16px] p-8 flex flex-col items-center justify-center text-center hover:bg-[#F4F7FE] transition-colors cursor-pointer group">
-                                        <div className="w-12 h-12 rounded-[12px] bg-[#F4F7FE] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                            <Upload className="w-6 h-6 text-[#71717A] group-hover:text-[#7C5CFC] transition-colors" suppressHydrationWarning />
-                                        </div>
-                                        <p className="text-sm text-[#71717A]">Drag & drop files here, or <span className="text-[#7C5CFC]">browse</span></p>
-                                        <p className="text-xs text-[#71717A] mt-1">PDF, DOCX up to 10MB</p>
-                                    </div>
-                                </div>
                         </>
                     )}
 

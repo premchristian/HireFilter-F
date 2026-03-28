@@ -50,6 +50,7 @@ export default function ProfilePage() {
     const [isSendingOTP, setIsSendingOTP] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
+    const [otpMethod, setOtpMethod] = useState("email"); // email or phone
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -165,27 +166,29 @@ export default function ProfilePage() {
         }
     };
 
-    const handleRequestOTP = async () => {
+    const handleRequestOTP = async (method = "email") => {
         const email = profile.email || localStorage.getItem("userEmail");
-        if (!email) {
-            setPasswordError("User email not found. Please log in again.");
+        const identifier = method === "phone" ? profile.phone : email;
+
+        if (!identifier) {
+            setPasswordError(method === "phone" ? "Phone number not found in profile." : "User email not found. Please log in again.");
             return;
         }
 
         setIsSendingOTP(true);
         setPasswordError("");
         setOtpSent(false);
+        setOtpMethod(method);
 
         try {
-            console.log("Requesting OTP for candidate profile email:", email.trim());
+            console.log(`Requesting OTP for candidate ${method}:`, identifier.trim());
             const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/forgot-password`, {
-                email: email.trim()
+                [method === "phone" ? "identifier" : "email"]: identifier.trim()
             });
             console.log("OTP Request Response:", res.data);
             setOtpSent(true);
         } catch (err) {
-            console.error("OTP Request Failed. Status:", err.response?.status);
-            console.error("Error Data:", err.response?.data);
+            console.error("OTP Request Failed:", err.response?.data);
             setPasswordError(err.response?.data?.message || "Failed to send OTP. Please try again.");
         } finally {
             setIsSendingOTP(false);
@@ -213,11 +216,12 @@ export default function ProfilePage() {
         setPasswordError("");
 
         try {
-            console.log("Attempting candidate password reset for:", email.trim(), "with OTP:", passwordForm.otp.trim());
+            const identifier = otpMethod === "phone" ? profile.phone : email;
+            console.log(`Attempting candidate password reset for ${otpMethod}:`, identifier.trim());
             const res = await axios.post(
                 `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/reset-password`,
                 {
-                    email: email.trim(),
+                    [otpMethod === "phone" ? "identifier" : "email"]: identifier.trim(),
                     otp: passwordForm.otp.trim(),
                     newPassword: passwordForm.newPassword
                 }
@@ -926,16 +930,27 @@ export default function ProfilePage() {
                                 <form onSubmit={handleUpdatePassword} className="w-full space-y-4">
                                     {/* OTP Field */}
                                     <div className="text-left space-y-2">
-                                        <div className="flex justify-between items-end">
-                                            <label className="text-[10px] font-black text-[#71717A] uppercase tracking-widest ml-1">OTP (Sent to Email)</label>
-                                            <button
-                                                type="button"
-                                                onClick={handleRequestOTP}
-                                                disabled={isSendingOTP}
-                                                className="text-[10px] font-bold text-[#7C5CFC] hover:text-[#5B3FD7] mb-1 transition-colors disabled:opacity-50"
-                                            >
-                                                {isSendingOTP ? "Sending..." : otpSent ? "Resend OTP" : "Request OTP"}
-                                            </button>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-[#71717A] uppercase tracking-widest ml-1">Request OTP via:</label>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRequestOTP("email")}
+                                                    disabled={isSendingOTP}
+                                                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${otpMethod === "email" && otpSent ? 'bg-[#7C5CFC] text-white' : 'bg-[#F4F7FE] text-[#71717A] hover:border-[#7C5CFC]/20'}`}
+                                                >
+                                                    {isSendingOTP && otpMethod === "email" ? "Sending..." : "OTP on Email"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRequestOTP("phone")}
+                                                    disabled={isSendingOTP || !profile.phone}
+                                                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border ${otpMethod === "phone" && otpSent ? 'bg-[#7C5CFC] text-white' : 'bg-[#F4F7FE] text-[#71717A] hover:border-[#7C5CFC]/20'} ${!profile.phone ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    title={!profile.phone ? "Phone number not available" : ""}
+                                                >
+                                                    {isSendingOTP && otpMethod === "phone" ? "Sending..." : "OTP on Number"}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="relative">
                                             <input
