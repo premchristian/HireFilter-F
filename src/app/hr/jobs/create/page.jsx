@@ -66,7 +66,7 @@ export default function CreateJobPage() {
                 },
                 education: formData.education, // Assumption: key is 'education'
                 lastDate: formData.lastDate,
-                department: formData.department,
+                // department: formData.department, // Removed: Not allowed by API
             };
             
             // Remove department from payload based on error message
