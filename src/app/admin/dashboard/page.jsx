@@ -40,11 +40,11 @@ export default function AdminDashboard() {
     };
 
     const [stats, setStats] = useState([
-        { label: "Total Users", value: "0", trend: "+0%", positive: true, icon: Users, color: "text-amber-400" },
-        { label: "Active Jobs", value: "0", trend: "+0%", positive: true, icon: Briefcase, color: "text-blue-400" },
-        { label: "Total Hired", value: "0", trend: "+0%", positive: true, icon: CheckCircle2, color: "text-emerald-400" },
-        { label: "Shortlisted", value: "0", trend: "+0%", positive: true, icon: UserPlus, color: "text-indigo-400" },
-        { label: "Rejected", value: "0", trend: "+0%", positive: false, icon: XCircle, color: "text-rose-400" },
+        { label: "Total Users", value: "0", icon: Users, color: "text-amber-400" },
+        { label: "Active Jobs", value: "0", icon: Briefcase, color: "text-blue-400" },
+        { label: "Total Hired", value: "0", icon: CheckCircle2, color: "text-emerald-400" },
+        { label: "Shortlisted", value: "0", icon: UserPlus, color: "text-indigo-400" },
+        { label: "Rejected", value: "0", icon: XCircle, color: "text-rose-400" },
     ]);
 
     const [trafficData, setTrafficData] = useState([]);
@@ -97,11 +97,6 @@ export default function AdminDashboard() {
     };
 
 
-    const calculateTrend = (current, previous) => {
-        if (!previous || previous === 0) return current > 0 ? `+${current * 100}%` : "+0%";
-        const diff = ((current - previous) / previous) * 100;
-        return `${diff >= 0 ? "+" : ""}${Math.round(diff)}%`;
-    };
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -118,51 +113,36 @@ export default function AdminDashboard() {
                     const data = result.data;
 
                     if (data) {
-                        const { totals, growth, applications } = data;
-
-                        // Calculate trends
-                        const userTrend = calculateTrend(growth.usersAddedThisMonth, growth.usersAddedLastMonth);
-                        const jobTrend = calculateTrend(growth.jobsAddedThisMonth, growth.jobsAddedLastMonth);
-                        const hrTrend = calculateTrend(growth.hrsAddedThisMonth, growth.hrsAddedLastMonth);
+                        const { totals, applications } = data;
 
                         setStats([
                             { 
                                 label: "Total Users", 
                                 value: (totals.users || 0).toLocaleString(), 
-                                trend: userTrend, 
-                                positive: growth.usersAddedThisMonth >= growth.usersAddedLastMonth, 
                                 icon: Users, 
                                 color: "text-amber-400" 
                             },
                             { 
                                 label: "Active Jobs", 
                                 value: (totals.jobs || 0).toLocaleString(), 
-                                trend: jobTrend, 
-                                positive: growth.jobsAddedThisMonth >= growth.jobsAddedLastMonth, 
                                 icon: Briefcase, 
                                 color: "text-blue-400" 
                             },
                             { 
                                 label: "Total Hired", 
                                 value: (applications.hired || 0).toLocaleString(), 
-                                trend: "+0%", // Not provided in growth object
-                                positive: true, 
                                 icon: CheckCircle2, 
                                 color: "text-emerald-400" 
                             },
                             { 
                                 label: "Shortlisted", 
                                 value: (applications.shortlisted || 0).toLocaleString(), 
-                                trend: "+0%", 
-                                positive: true, 
                                 icon: UserPlus, 
                                 color: "text-indigo-400" 
                             },
                             { 
                                 label: "Rejected", 
                                 value: (applications.rejected || 0).toLocaleString(), 
-                                trend: "+0%", 
-                                positive: false, 
                                 icon: XCircle, 
                                 color: "text-rose-400" 
                             },
@@ -198,6 +178,7 @@ export default function AdminDashboard() {
                     const graphMonths = [];
                     for (let i = 5; i >= 0; i--) {
                         const d = new Date();
+                        d.setDate(1); // Crucial: set date to 1st to avoid month rolling over Feb on 30th/31st
                         d.setMonth(currentMonth - i);
                         graphMonths.push({
                             name: months[d.getMonth()],
@@ -277,12 +258,6 @@ export default function AdminDashboard() {
                                 <div className={`p-4 rounded-2xl bg-white/5 ${stat.color}`}>
                                     <stat.icon className="w-6 h-6" />
                                 </div>
-                                {stat.trend && (
-                                    <div className={`flex items-center gap-1 text-xs font-black ${stat.positive ? "text-emerald-400" : "text-red-400"}`}>
-                                        {stat.trend}
-                                        {stat.positive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                                    </div>
-                                )}
                             </div>
                             <h3 className="text-4xl font-black text-white mb-2">{stat.value}</h3>
                             <p className="text-gray-500 font-bold text-xs uppercase tracking-widest">{stat.label}</p>
@@ -305,27 +280,31 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-                <div className="h-64 flex items-end justify-between gap-2 px-4">
+                <div className="h-64 flex items-end justify-between gap-6 px-4">
                     {trafficData.length > 0 ? trafficData.map((data, i) => (
-                        <motion.div 
-                            key={i} 
-                            initial={{ height: 0 }}
-                            animate={{ height: `${Math.max(data.height, 5)}%` }} // Min 5% height for visibility
-                            transition={{ delay: i * 0.05, duration: 0.8 }}
-                            className="flex-1 bg-linear-to-t from-amber-500/20 to-amber-500 rounded-t-lg relative group"
-                        >
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-max px-2 py-1 bg-white text-black text-[10px] font-black rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                                {data.users} Users, {data.jobs} Jobs
+                        <div key={i} className="flex-1 flex flex-col items-center h-full justify-end group">
+                            <div className="w-full relative flex flex-col items-center justify-end h-full">
+                                <motion.div 
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${Math.max(data.height, 5)}%` }} // Min 5% height for visibility
+                                    transition={{ delay: i * 0.05, duration: 0.8 }}
+                                    className="w-full bg-linear-to-t from-amber-500/20 to-amber-500 rounded-t-lg relative group-hover:from-amber-500/30 transition-all shadow-[0_0_20px_rgba(245,158,11,0.1)]"
+                                />
+                                <div className="absolute bottom-full mb-3 px-3 py-1.5 bg-white text-black text-[10px] font-black rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 z-10 pointer-events-none shadow-xl border border-black/5 whitespace-nowrap">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-gray-500 text-[8px] uppercase">{data.label} {new Date().getFullYear()}</span>
+                                        <span>{data.users} Users, {data.jobs} Jobs</span>
+                                    </div>
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-white" />
+                                </div>
                             </div>
-                        </motion.div>
+                            <span className="mt-6 text-[10px] font-black text-gray-600 uppercase tracking-widest group-hover:text-amber-500 transition-colors">
+                                {data.label}
+                            </span>
+                        </div>
                     )) : (
                        <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">Loading traffic data...</div>
                     )}
-                </div>
-                <div className="flex justify-between mt-6 px-4 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                    {trafficData.map((data, i) => (
-                        <span key={i}>{data.label}</span>
-                    ))}
                 </div>
             </motion.div>
         </motion.div>

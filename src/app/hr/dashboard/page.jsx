@@ -8,6 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { useJobContext } from "@/context/JobContext";
 import { DashboardSkeleton } from "@/components/Skeleton";
+import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 
 export default function DashboardPage() {
   const { jobs } = useJobContext();
@@ -337,6 +338,7 @@ export default function DashboardPage() {
         </div>
 
       </motion.div>
+      <ProfileCompletionModal />
     </motion.div>
   );
 }

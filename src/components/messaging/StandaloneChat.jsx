@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Send, Paperclip, Phone, Video, Info, Check, CheckCheck, Loader2, X, Pencil, Trash2 } from "lucide-react";
+import { Search, Send, Phone, Video, Check, CheckCheck, Loader2, X, Pencil, Trash2 } from "lucide-react";
 import axios from "axios";
 import { useSearchParams } from "next/navigation";
 import { useNotificationContext } from "@/context/NotificationContext";
@@ -691,7 +691,6 @@ const cancelEditing = () => {
                                 {/* <button className="p-2 sm:p-2.5 hover:bg-white/5 rounded-full transition-colors hidden sm:block"><Phone className="w-4.5 h-4.5" suppressHydrationWarning /></button> */}
                                 {/* <button className="p-2 sm:p-2.5 hover:bg-white/5 rounded-full transition-colors hidden sm:block"><Video className="w-4.5 h-4.5" suppressHydrationWarning /></button> */}
                                 <div className="w-px h-6 bg-[#F1F1F1] mx-1 hidden sm:block"></div>
-                                <button className="p-2 sm:p-2.5 hover:bg-[#F4F7FE] hover:text-[#080808] rounded-[12px] transition-colors"><Info className="w-4.5 h-4.5" suppressHydrationWarning /></button>
                             </div>
                         </div>
 
@@ -847,9 +846,6 @@ const cancelEditing = () => {
                                 onSubmit={handleSendOrEdit}
                                 className={`flex items-end gap-3 bg-[#F4F7FE] p-2 border rounded-[16px] focus-within:bg-white transition-all shadow-inner relative ${editingMessageId ? 'border-[#7C5CFC]/30' : 'border-[#F1F1F1] focus-within:border-[#7C5CFC]/30'}`}
                             >
-                                <button type="button" className="p-2 sm:p-2.5 text-[#71717A] hover:text-[#080808] rounded-[12px] hover:bg-white transition-colors shrink-0">
-                                    <Paperclip className="w-5 h-5" suppressHydrationWarning />
-                                </button>
                                 <textarea
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}

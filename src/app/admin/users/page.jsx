@@ -14,6 +14,9 @@ import {
     UserCircle2,
     X,
     Plus,
+    Phone,
+    Trash2,
+    AlertCircle,
     Loader2,
     ChevronDown
 } from "lucide-react";
@@ -23,12 +26,11 @@ export default function UserManagementPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState("All Roles");
     const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [isCreating, setIsCreating] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const itemsPerPage = 5;
+    const [userToDelete, setUserToDelete] = useState(null); // { id, name }
+    const itemsPerPage = 7; // Increased items per page for better view
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -79,10 +81,16 @@ export default function UserManagementPage() {
                         "from-red-500 to-orange-500"
                     ];
                     
+                    const name = user.name || user.fullName || user.username || 
+                                 (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName) || 
+                                 (user.profile && typeof user.profile === 'object' ? user.profile.name : null) || 
+                                 "Unknown";
+
                     return {
                         id: user._id || index,
-                        name: user.name || "Unknown",
-                        email: user.email || "No Email",
+                        name: name,
+                        email: user.email || null,
+                        mobile: user.mobile || user.phone || null,
                         role: user.role || "Candidate",
                         joined: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : "Recently",
                         color: colors[index % colors.length]
@@ -124,8 +132,9 @@ export default function UserManagementPage() {
 
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
-    const handleDeleteUser = async (id) => {
-        if (!confirm("Are you sure you want to delete this user?")) return;
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+        const id = userToDelete.id;
 
         try {
             const token = localStorage.getItem("token");
@@ -138,6 +147,7 @@ export default function UserManagementPage() {
 
             if (response.ok) {
                 setUsers(users.filter(u => u.id !== id));
+                setUserToDelete(null);
             } else {
                 console.error("Failed to delete user");
                 alert("Failed to delete user. Please try again.");
@@ -148,24 +158,7 @@ export default function UserManagementPage() {
         }
     };
 
-    const handleCreateUser = (e) => {
-        e.preventDefault();
-        setIsCreating(true);
-        // Simulate creation
-        setTimeout(() => {
-            const newUser = {
-                id: Date.now(),
-                name: e.target.name.value,
-                email: e.target.email.value,
-                role: e.target.role.value,
-                joined: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-                color: "from-indigo-500 to-purple-500"
-            };
-            setUsers([newUser, ...users]);
-            setIsCreating(false);
-            setShowCreateModal(false);
-        }, 1500);
-    };
+
 
     return (
         <div className="space-y-8 max-w-7xl mx-auto relative">
@@ -174,13 +167,6 @@ export default function UserManagementPage() {
                     <h1 className="text-3xl font-black text-white">User <span className="text-amber-500">Registry</span></h1>
                     <p className="text-gray-500 text-sm mt-1">Manage and audit all platform accounts</p>
                 </div>
-                <button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-black rounded-xl font-black transition-all shadow-lg shadow-amber-500/20 active:scale-95"
-                >
-                    <UserPlus className="w-5 h-5" />
-                    Create New User
-                </button>
             </div>
 
             {/* Filters */}
@@ -284,9 +270,23 @@ export default function UserManagementPage() {
                                                     </div>
                                                     <div>
                                                         <div className="font-bold text-white group-hover:text-amber-500 transition-colors">{user.name}</div>
-                                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                                            <Mail className="w-3 h-3" />
-                                                            {user.email}
+                                                        <div className="text-[11px] text-gray-500 flex items-center gap-1.5 mt-1">
+                                                            {user.email ? (
+                                                                <>
+                                                                    <Mail className="w-3.5 h-3.5 text-blue-400/50" />
+                                                                    <span className="font-medium tracking-wide">{user.email}</span>
+                                                                </>
+                                                            ) : user.mobile ? (
+                                                                <>
+                                                                    <Phone className="w-3.5 h-3.5 text-amber-400/50" />
+                                                                    <span className="font-medium tracking-wide text-amber-500/70">{user.mobile}</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <AlertCircle className="w-3.5 h-3.5 text-red-400/50" />
+                                                                    <span className="font-medium italic tracking-wide text-red-500/50">No Contact Info</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -310,11 +310,11 @@ export default function UserManagementPage() {
                                             <td className="px-8 py-5 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <button 
-                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        onClick={() => setUserToDelete({ id: user.id, name: user.name })}
                                                         title="Delete User"
-                                                        className="p-2 rounded-lg bg-white/5 border border-white/5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                                        className="p-2.5 rounded-xl bg-white/5 border border-white/5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all flex items-center gap-2 group/btn active:scale-95"
                                                     >
-                                                        <XCircle className="w-4 h-4" />
+                                                        <Trash2 className="w-4 h-4 transition-transform group-hover/btn:scale-110" />
                                                     </button>
                                                 </div>
                                             </td>
@@ -365,85 +365,49 @@ export default function UserManagementPage() {
                 )}
             </div>
 
-            {/* Create User Modal */}
+            {/* Delete Confirmation Modal */}
             <AnimatePresence>
-                {showCreateModal && (
+                {userToDelete && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
                         <motion.div 
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => setShowCreateModal(false)}
+                            onClick={() => setUserToDelete(null)}
                             className="absolute inset-0 bg-black/80 backdrop-blur-md"
                         />
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-lg bg-[#111418] border border-white/10 rounded-[32px] p-8 relative z-10 shadow-2xl"
+                            className="w-full max-w-md bg-[#111418] border border-white/10 rounded-[32px] overflow-hidden relative z-10 shadow-2xl"
                         >
-                            <button 
-                                onClick={() => setShowCreateModal(false)}
-                                className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
-                            >
-                                <X className="w-6 h-6" />
-                            </button>
-
-                            <div className="mb-8">
-                                <h2 className="text-2xl font-black text-white">Add Individual <span className="text-amber-500">User</span></h2>
-                                <p className="text-gray-500 text-sm mt-1">Manual account creation for candidates or HRs</p>
-                            </div>
-
-                            <form onSubmit={handleCreateUser} className="space-y-6">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
-                                        <input 
-                                            name="name"
-                                            required
-                                            className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-amber-500/50 transition-all outline-none" 
-                                            placeholder="e.g. Robert Downey" 
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
-                                        <input 
-                                            name="email"
-                                            type="email"
-                                            required
-                                            className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-amber-500/50 transition-all outline-none" 
-                                            placeholder="robert@example.com" 
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Account Role</label>
-                                        <select 
-                                            name="role"
-                                            className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white focus:border-amber-500/50 transition-all outline-none appearance-none"
-                                        >
-                                            <option value="Candidate">Candidate</option>
-                                            <option value="HR / Employer">HR / Employer</option>
-                                        </select>
-                                    </div>
+                            <div className="p-8 text-center">
+                                <div className="w-20 h-20 bg-red-500/10 rounded-[24px] flex items-center justify-center mx-auto mb-6 border-2 border-red-500/20 shadow-lg shadow-red-500/5">
+                                    <Trash2 className="w-10 h-10 text-red-500" />
                                 </div>
+                                
+                                <h2 className="text-2xl font-black text-white mb-3">Delete Account?</h2>
+                                <p className="text-gray-400 font-medium leading-relaxed mb-8">
+                                    You are about to delete <span className="text-white font-bold">{userToDelete.name}</span>. This action is permanent and cannot be undone.
+                                </p>
 
-                                <button 
-                                    disabled={isCreating}
-                                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 disabled:bg-amber-800 text-black rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/20 active:scale-95 mt-4"
-                                >
-                                    {isCreating ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            <span>Initializing Account...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Plus className="w-5 h-5" />
-                                            <span>Create Platform Account</span>
-                                        </>
-                                    )}
-                                </button>
-                            </form>
+                                <div className="flex flex-col gap-3">
+                                    <button 
+                                        onClick={handleDeleteUser}
+                                        className="w-full py-4 bg-red-500 hover:bg-red-600 text-white rounded-2xl font-black transition-all shadow-lg shadow-red-500/20 active:scale-95"
+                                    >
+                                        Yes, Delete Account
+                                    </button>
+                                    <button 
+                                        onClick={() => setUserToDelete(null)}
+                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-2xl font-black transition-all active:scale-95"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="h-1.5 bg-red-500 w-full" />
                         </motion.div>
                     </div>
                 )}

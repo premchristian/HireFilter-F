@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Mail, Phone, MapPin, Globe, Loader2, Download, Briefcase, GraduationCap, FileText, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Globe, Loader2, Download, Briefcase, GraduationCap, FileText, CheckCircle, XCircle, Calendar, Award, Clock } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 import { useJobContext } from "@/context/JobContext";
@@ -231,21 +231,53 @@ export default function ApplicantDetailsPage() {
                 </div>
 
                 {/* Status Actions */}
-                <div className="flex gap-3 bg-[#FFFFFF] p-2 rounded-[16px] border border-[#F1F1F1] shadow-[0px_4px_20px_rgba(0,0,0,0.05)]">
-                    <button 
-                        onClick={() => handleUpdateStatus('Shortlisted')}
-                        className={`px-4 py-2 rounded-[12px] text-sm font-bold flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'shortlisted' ? 'bg-[#EFFFED] text-success shadow-[0px_4px_20px_rgba(39,192,82,0.15)] border border-success/20' : 'text-[#71717A] hover:bg-[#EFFFED] hover:text-success border border-transparent'}`}
-                    >
-                        <CheckCircle className="w-4 h-4" />
-                        Shortlist
-                    </button>
-                    <button 
-                        onClick={() => handleUpdateStatus('Rejected')}
-                        className={`px-4 py-2 rounded-[12px] text-sm font-bold flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'rejected' ? 'bg-[#FFEDE1] text-[#FF5C5C] shadow-[0px_4px_20px_rgba(255,92,92,0.15)] border border-[#FF5C5C]/20' : 'text-[#71717A] hover:bg-[#FFEDE1] hover:text-[#FF5C5C] border border-transparent'}`}
-                    >
-                        <XCircle className="w-4 h-4" />
-                        Reject
-                    </button>
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Current Status Badge */}
+                    <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-[#F1F1F1] rounded-[14px] shadow-sm">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#71717A]">Current Status</span>
+                        <div className={`h-2 w-2 rounded-full animate-pulse ${
+                            application.status?.toLowerCase() === 'hired' ? 'bg-[#27C052]' :
+                            application.status?.toLowerCase() === 'shortlisted' ? 'bg-[#7C5CFC]' :
+                            application.status?.toLowerCase() === 'rejected' ? 'bg-[#FF5C5C]' :
+                            application.status?.toLowerCase() === 'interviewing' ? 'bg-blue-500' :
+                            'bg-[#71717A]'
+                        }`} />
+                        <span className="text-xs font-black text-[#080808] uppercase tracking-tight">
+                            {application.status || "New"}
+                        </span>
+                    </div>
+
+                    <div className="flex gap-2 bg-[#FFFFFF] p-1.5 rounded-[16px] border border-[#F1F1F1] shadow-[0px_4px_20px_rgba(0,0,0,0.05)]">
+                        <button 
+                            onClick={() => handleUpdateStatus('Shortlisted')}
+                            className={`px-4 py-2 rounded-[12px] text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'shortlisted' ? 'bg-[#EBE8FF] text-[#7C5CFC] shadow-sm border border-[#7C5CFC]/20' : 'text-[#71717A] hover:bg-[#F4F7FE] border border-transparent'}`}
+                        >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Shortlist
+                        </button>
+                        <button 
+                            onClick={() => handleUpdateStatus('Interviewing')}
+                            className={`px-4 py-2 rounded-[12px] text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'interviewing' ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-500/20' : 'text-[#71717A] hover:bg-[#F4F7FE] border border-transparent'}`}
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            Interview
+                        </button>
+                        <button 
+                            onClick={() => handleUpdateStatus('Hired')}
+                            className={`px-4 py-2 rounded-[12px] text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'hired' ? 'bg-[#EFFFED] text-[#27C052] shadow-sm border border-[#27C052]/20' : 'text-[#71717A] hover:bg-[#F4F7FE] border border-transparent'}`}
+                        >
+                            <Award className="w-3.5 h-3.5" />
+                            Hire
+                        </button>
+                        <div className="w-px h-6 bg-[#F1F1F1] my-auto mx-1" />
+                        <button 
+                            onClick={() => handleUpdateStatus('Rejected')}
+                            className={`px-4 py-2 rounded-[12px] text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all ${application.status?.toLowerCase() === 'rejected' ? 'bg-[#FFEDE1] text-[#FF5C5C] shadow-sm border border-[#FF5C5C]/20' : 'text-[#71717A] hover:bg-[#FFEDE1] hover:text-[#FF5C5C] border border-transparent'}`}
+                        >
+                            <XCircle className="w-3.5 h-3.5" />
+                            Reject
+                        </button>
+                    </div>
                 </div>
             </div>
 

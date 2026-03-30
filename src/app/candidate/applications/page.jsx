@@ -49,13 +49,18 @@ export default function ApplicationsPage() {
                         return true;
                     }) 
                     .map(async (app, index) => {
+                        const capitalizeStatus = (s) => {
+                            if (!s) return "Applied";
+                            return s.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+                        };
+
                         return {
                             id: app._id || `temp-${index}`,
                             role: app.job.jobTitle || "Unknown Role", 
-                            company: app.job.createdBy?.company?.name || app.job.department || "Company",
+                            company: app.job.createdBy?.company?.name || app.job.companyName || app.job.department || "HireFilter",
                             logo: (app.job.jobTitle || "C").charAt(0),
                             logoColor: "bg-[#EBE8FF] text-[#7C5CFC]", 
-                            status: app.status || "Applied",
+                            status: capitalizeStatus(app.status),
                             date: app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "Unknown Date",
                             location: app.job.location || "Remote",
                             derivedStatus: app.status,
@@ -85,15 +90,23 @@ export default function ApplicationsPage() {
     const getStatusColor = (status = "") => {
         const s = status.toLowerCase();
         switch (s) {
-            case "interviewing": return "text-[#7C5CFC] bg-[#EBE8FF] border-[#EBE8FF]";
-            case "shortlisted": return "text-[#7C5CFC] bg-[#EBE8FF] border-[#EBE8FF]";
-            case "reviewing": return "text-[#FF9900] bg-[#FFF2E0] border-[#FFF2E0]";
-            case "rejected": return "text-white bg-[#FF3B30] border-[#FF3B30]";
+            case "interviewing":
+            case "interview": 
+                return "text-[#4F46E5] bg-[#EEF2FF] border-[#4F46E5]/20";
+            case "shortlisted":
+            case "shortlist":
+                return "text-[#7C5CFC] bg-[#EBE8FF] border-[#7C5CFC]/20";
+            case "reviewing": 
+                return "text-[#FF9900] bg-[#FFF2E0] border-[#FF9900]/20";
+            case "rejected": 
+                return "text-white bg-[#FF3B30] border-[#FF3B30]";
             case "offer": 
             case "offer sent":
             case "hired":
-                return "text-[#27C052] bg-[#EFFFED] border-[#EFFFED]";
-            default: return "text-[#71717A] bg-[#F4F7FE] border-[#F1F1F1]";
+            case "hire":
+                return "text-[#27C052] bg-[#EFFFED] border-[#27C052]/20";
+            default: 
+                return "text-[#71717A] bg-[#F4F7FE] border-[#F1F1F1]";
         }
     };
 

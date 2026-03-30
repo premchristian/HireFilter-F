@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import { useJobContext } from "@/context/JobContext";
 import axios from "axios";
 import { DashboardSkeleton } from "@/components/Skeleton";
+import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 
 export default function CandidateDashboard() {
     const [userName, setUserName] = useState("Candidate");
@@ -375,6 +376,7 @@ export default function CandidateDashboard() {
                     </div>
                 </div>
             </motion.div>
+            <ProfileCompletionModal />
         </motion.div>
     );
 }
