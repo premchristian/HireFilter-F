@@ -173,7 +173,7 @@ function AuthContent() {
         if (!regPhone.trim()) throw new Error("Please provide a Mobile Number");
         identifier = regPhone.trim();
         if (!identifier.startsWith('+')) {
-            identifier = '+' + identifier;
+            identifier = selectedCountry.code + identifier;
         }
       } else {
         if (!regEmail.trim()) throw new Error("Please provide an Email Address");
@@ -210,7 +210,7 @@ function AuthContent() {
       const payload = {
         name: regName,
         email: regMethod === "email" ? regEmail.trim() : undefined,
-        phone: regMethod === "mobile" ? (regPhone.trim().startsWith('+') ? regPhone.trim() : '+' + regPhone.trim()) : undefined,
+        phone: regMethod === "mobile" ? (regPhone.trim().startsWith('+') ? regPhone.trim() : selectedCountry.code + regPhone.trim()) : undefined,
         password: regPassword,
         role: regRole,
       };
@@ -336,7 +336,6 @@ function AuthContent() {
                           type="button"
                           onClick={() => {
                             setSelectedCountry({ code: c.code, flag: c.flag });
-                            setRegPhone(c.code + regPhone.replace(/^\+\d+/, ""));
                             setShowCountryDropdown(false);
                             setSearchQuery("");
                           }}
@@ -357,8 +356,7 @@ function AuthContent() {
                 type="tel"
                 value={regPhone}
                 onChange={(e) => {
-                    let val = e.target.value;
-                    if (val && !val.startsWith('+')) val = '+' + val;
+                    let val = e.target.value.replace(/[^\d+]/g, ""); // Only digits and plus
                     setRegPhone(val);
                 }}
                 placeholder={regMethod === "mobile" ? "Mobile Number (Required)" : "Mobile Number (Optional)"}
