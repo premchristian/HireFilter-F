@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useJobContext } from "@/context/JobContext";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { MapPin, Users, Calendar, Briefcase, IndianRupee, Clock, ArrowLeft, AlertCircle } from "lucide-react";
+import { MapPin, Users, Calendar, Briefcase, IndianRupee, Clock, ArrowLeft, AlertCircle, Edit2, X } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import axios from "axios";
 
@@ -14,20 +15,85 @@ export default function JobDetailsPage() {
     const { getJobById } = useJobContext();
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [jobToEdit, setJobToEdit] = useState(null);
+    const [editFormData, setEditFormData] = useState({});
+
+    const fetchData = async () => {
+        if (params.jobId) {
+            setLoading(true);
+            const data = await getJobById(params.jobId);
+            setJob(data);
+            setLoading(false);
+        }
+    };
 
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (params.jobId) {
-                const data = await getJobById(params.jobId);
-                setJob(data);
-
-
-                setLoading(false);
-            }
-        };
         fetchData();
     }, [params.jobId]);
+
+    const handleEditClick = (job) => {
+        setJobToEdit(job);
+        setEditFormData({
+            jobTitle: job.title || "",
+            location: job.location || "",
+            jobType: job.type || "Full-Time",
+            department: job.department || "Engineering",
+            jobDescription: job.description || ""
+        });
+    };
+
+    const handleUpdateJob = async () => {
+        if (!jobToEdit) return;
+
+        const token = localStorage.getItem("token");
+        if (!token) return alert("Please log in again.");
+
+        try {
+            const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+            // Fetch raw job details from DB to ensure we have all fields
+            const rawJobRes = await axios.get(`${baseUrl}/api/jobs/${jobToEdit.id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const rawJob = rawJobRes.data?.data || rawJobRes.data?.job || rawJobRes.data;
+
+            if (!rawJob) {
+                return alert("Could not fetch the full job details. Try again.");
+            }
+
+            // Construct payload with ONLY allowed Joi schema fields!
+            const payload = {
+                jobTitle: editFormData.jobTitle || rawJob.jobTitle,
+                jobDescription: editFormData.jobDescription || rawJob.jobDescription || "Not provided",
+                jobType: editFormData.jobType || rawJob.jobType,
+                location: editFormData.location || rawJob.location,
+                requiredSkills: Array.isArray(rawJob.requiredSkills) ? rawJob.requiredSkills : [],
+                experience: rawJob.experience || { min: 0, max: 0 },
+                salary: rawJob.salary || { min: 0, max: 0, currency: "INR" },
+                education: jobToEdit.education || rawJob.education || "Any",
+                lastDate: rawJob.lastDate || new Date().toISOString(),
+                department: editFormData.department || rawJob.department || "Engineering"
+            };
+
+            await axios.put(`${baseUrl}/api/jobs/${jobToEdit.id}`, payload, {
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            
+            await fetchData();
+            setJobToEdit(null);
+            alert("Job updated successfully");
+        } catch (error) {
+            console.error("Error updating job:", error);
+            const errMsg = error.response?.data?.errors 
+                ? error.response.data.errors.join(", ") 
+                : error.response?.data?.message || "Failed to update job";
+            alert("Validation Error: " + errMsg);
+        }
+    };
 
 
 
@@ -134,14 +200,125 @@ export default function JobDetailsPage() {
                                     ))}
                                 </div>
                                 
-                                <button className="w-full py-4 bg-[#7C5CFC] hover:bg-[#6A4FE0] text-white rounded-[16px] font-bold text-sm shadow-[0px_4px_20px_rgba(124,92,252,0.3)] transition-all active:scale-[0.98]">
-                                    Manage Applications
-                                </button>
+                                <div className="grid gap-3">
+                                    <button 
+                                        onClick={() => handleEditClick(job)}
+                                        className="w-full py-4 bg-[#EBE8FF] text-[#7C5CFC] hover:bg-[#7C5CFC] hover:text-white rounded-[16px] font-bold text-sm transition-all active:scale-[0.98] border border-[#7C5CFC]/10 flex items-center justify-center gap-2"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Update Job
+                                    </button>
+                                    <Link href={`/hr/applicants/${job.id}`} className="w-full">
+                                        <button className="w-full py-4 bg-[#7C5CFC] hover:bg-[#6A4FE0] text-white rounded-[16px] font-bold text-sm shadow-[0px_4px_20px_rgba(124,92,252,0.3)] transition-all active:scale-[0.98]">
+                                            Manage Applications
+                                        </button>
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Edit Job Modal */}
+            <AnimatePresence>
+                {jobToEdit && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-[#FFFFFF] border border-[#F1F1F1] rounded-[24px] p-8 max-w-2xl w-full shadow-[0px_8px_30px_rgba(0,0,0,0.1)] relative max-h-[90vh] overflow-y-auto"
+                        >
+                            <button onClick={() => setJobToEdit(null)} className="absolute top-6 right-6 text-[#71717A] hover:text-[#080808]">
+                                <X className="w-6 h-6" />
+                            </button>
+                            <h2 className="text-2xl font-black text-[#080808] mb-8 flex items-center gap-3">
+                                <div className="w-2 h-8 bg-[#7C5CFC] rounded-full" />
+                                Edit Job Details
+                            </h2>
+                            <div className="space-y-6 mb-8">
+                                <div>
+                                    <label className="text-sm font-black text-[#080808] uppercase tracking-wider">Job Title</label>
+                                    <input 
+                                        type="text" 
+                                        value={editFormData.jobTitle} 
+                                        onChange={(e) => setEditFormData({...editFormData, jobTitle: e.target.value})}
+                                        className="w-full mt-2 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] px-5 py-3.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 font-medium"
+                                    />
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="text-sm font-black text-[#080808] uppercase tracking-wider">Job Type</label>
+                                        <select 
+                                            value={editFormData.jobType} 
+                                            onChange={(e) => setEditFormData({...editFormData, jobType: e.target.value})}
+                                            className="w-full mt-2 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] px-5 py-3.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 font-medium"
+                                        >
+                                            <option>Full-Time</option>
+                                            <option>Part-Time</option>
+                                            <option>Contract</option>
+                                            <option>Internship</option>
+                                            <option>Remote</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-sm font-black text-[#080808] uppercase tracking-wider">Department</label>
+                                        <select 
+                                            value={editFormData.department} 
+                                            onChange={(e) => setEditFormData({...editFormData, department: e.target.value})}
+                                            className="w-full mt-2 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] px-5 py-3.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 font-medium"
+                                        >
+                                            <option>Engineering</option>
+                                            <option>IT</option>
+                                            <option>Design</option>
+                                            <option>Marketing</option>
+                                            <option>Sales</option>
+                                            <option>Account</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-black text-[#080808] uppercase tracking-wider">Location</label>
+                                    <input 
+                                        type="text" 
+                                        value={editFormData.location} 
+                                        onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
+                                        className="w-full mt-2 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] px-5 py-3.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 font-medium"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-black text-[#080808] uppercase tracking-wider">Description</label>
+                                    <textarea 
+                                        value={editFormData.jobDescription} 
+                                        onChange={(e) => setEditFormData({...editFormData, jobDescription: e.target.value})}
+                                        rows={5}
+                                        className="w-full mt-2 bg-[#F4F7FE] border border-[#F1F1F1] rounded-[16px] px-5 py-3.5 text-[#080808] focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/50 font-medium resize-none"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setJobToEdit(null)} 
+                                    className="flex-1 px-6 py-4 rounded-[16px] border border-[#F1F1F1] text-[#71717A] hover:bg-[#F4F7FE] font-bold transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleUpdateJob} 
+                                    className="flex-1 px-6 py-4 rounded-[16px] bg-[#7C5CFC] hover:bg-[#6A4FE0] text-white font-bold transition-all shadow-lg shadow-[#7C5CFC]/20"
+                                >
+                                    Save Changes
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
     Search, 
@@ -22,6 +23,7 @@ import axios from "axios";
 import { useJobContext } from "@/context/JobContext";
 
 export default function JobsPage() {
+    const router = useRouter();
     const { jobs, fetchJobs } = useJobContext();
     const [searchQuery, setSearchQuery] = useState("");
     const [showMyJobs, setShowMyJobs] = useState(false);
@@ -323,7 +325,11 @@ export default function JobsPage() {
                     className="grid gap-4"
                 >
                     <AnimatePresence mode="popLayout">
-                        {filteredJobs.map((job) => (
+                        {filteredJobs.map((job) => {
+                            const creatorId = typeof job.createdBy === 'object' ? job.createdBy?._id : job.createdBy;
+                            const isCreator = currentUserId && creatorId === currentUserId;
+                            
+                            return (
                                 <motion.div 
                                     key={job.id}
                                     layout
@@ -331,6 +337,7 @@ export default function JobsPage() {
                                     initial="hidden"
                                     animate="show"
                                     exit={{ opacity: 0, scale: 0.95 }}
+                                    onClick={() => router.push(`/hr/jobs/${job.id}`)}
                                     className="group relative p-6 bg-[#FFFFFF] border border-[#F1F1F1] rounded-[16px] hover:border-[#EBE8FF] hover:shadow-[0px_8px_30px_rgba(0,0,0,0.08)] shadow-[0px_4px_20px_rgba(0,0,0,0.05)] transition-all cursor-pointer"
                                 >
                                     <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center relative z-10">
@@ -374,9 +381,24 @@ export default function JobsPage() {
                                                 </div>
                                             </div>
                                             
-                                            <div className="relative z-20">
+                                            <div className="flex items-center gap-3 relative z-20">
+                                                {isCreator && (
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditClick(job);
+                                                        }}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#EBE8FF] text-[#7C5CFC] hover:bg-[#7C5CFC] hover:text-white transition-all font-bold text-xs shadow-sm border border-[#7C5CFC]/10"
+                                                    >
+                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                        Update
+                                                    </button>
+                                                )}
                                                 <button 
-                                                    onClick={() => setOpenMenuId(openMenuId === job.id ? null : job.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(openMenuId === job.id ? null : job.id);
+                                                    }}
                                                     className="p-2 hover:bg-[#F4F7FE] rounded-[8px] transition-colors text-[#71717A] hover:text-[#080808]"
                                                 >
                                                     <MoreHorizontal className="w-5 h-5" />
@@ -417,7 +439,8 @@ export default function JobsPage() {
                                     {/* Hover Overlay Gradient */}
                                     <div className="absolute inset-0 bg-linear-to-r from-[#7C5CFC]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-[16px]" />
                                 </motion.div>
-                        ))}
+                            );
+                        })}
                     </AnimatePresence>
                 </motion.div>
             ) : (
