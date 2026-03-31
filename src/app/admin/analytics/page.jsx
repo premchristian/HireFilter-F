@@ -123,14 +123,9 @@ export default function GlobalAnalyticsPage() {
         fetchAnalyticsData();
     }, []);
  
-    const playClickSound = () => {
-        const audio = new Audio("/fahhhhh.mp3");
-        audio.currentTime = 0;
-        audio.play().catch(err => console.log("Sound play error:", err));
-    };
+
  
     const handleExport = () => {
-        playClickSound();
         setIsExporting(true);
         setExportStatus("exporting");
         
@@ -639,7 +634,7 @@ export default function GlobalAnalyticsPage() {
                             {["daily", "monthly"].map((g) => (
                                 <button
                                     key={g}
-                                    onClick={() => { setViewGranularity(g); playClickSound(); }}
+                                    onClick={() => { setViewGranularity(g); }}
                                     className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewGranularity === g ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20" : "text-gray-500 hover:text-white"}`}
                                 >
                                     {g}
@@ -652,7 +647,7 @@ export default function GlobalAnalyticsPage() {
                             {["all", "jobs", "candidates"].map((s) => (
                                 <button
                                     key={s}
-                                    onClick={() => { setActiveSeries(s); playClickSound(); }}
+                                    onClick={() => { setActiveSeries(s); }}
                                     className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeSeries === s ? "bg-blue-500 text-black shadow-lg shadow-blue-500/20" : "text-gray-500 hover:text-white"}`}
                                 >
                                     {s}

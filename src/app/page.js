@@ -376,7 +376,7 @@ const Hero = () => {
           <span className="text-gradient">Get hired faster.</span>
         </motion.h1>
         <motion.p variants={fadeInUp} className="text-lg text-muted mb-10 max-w-lg lg:mx-0 mx-auto leading-relaxed">
-          HireFilter is an AI‑powered job posting and job finding platform designed to streamline hiring for HR teams and job discovery for candidates.
+          HireFilter is an job posting and job finding platform designed to streamline hiring for HR teams and job discovery for candidates.
         </motion.p>
         <motion.div variants={fadeInUp}>
           <Link href="/Register" className="btn-primary flex items-center gap-3 lg:mx-0 mx-auto group w-max">
@@ -523,8 +523,7 @@ const CandidateFeatures = () => {
 
 const CoreFeatures = () => {
   const features = [
-     "AI‑based skill and experience matching",
-     "Resume parsing and generation",
+     "Resume generation",
      "Real‑time messaging between HR and candidates",
      "Role‑based dashboards (HR & Candidate)",
      "Secure authentication system",
